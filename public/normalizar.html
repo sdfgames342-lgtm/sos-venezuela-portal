@@ -25,21 +25,14 @@
     // Lógica determinista de normalización (sin IA)
     // ============================================================
 
-    /**
-     * Genera el bloque de texto con hashtags según la fórmula:
-     * Raíz + Ámbito + Acción + Tendencias del día + Ubicación (opcional)
-     */
     function generarTextoNormalizado(userText, ambito, accion, tendenciasDia = [], ubicacion = '') {
-      // 1. Raíz invariante
       const raiz = "#VZN26";
-
-      // 2. Construcción del ámbito y acción
       let hashtagEspecifico = raiz;
 
       if (ambito === "ls") {
-        hashtagEspecifico += "_ls"; // #VZN26_ls
+        hashtagEspecifico += "_ls";
       } else if (ambito === "dn") {
-        hashtagEspecifico += "_dn"; // #VZN26_dn
+        hashtagEspecifico += "_dn";
         const mapeoAcciones = {
           fakecf: "_fakecf",
           realcf: "_realcf",
@@ -50,28 +43,25 @@
           hashtagEspecifico += mapeoAcciones[accion];
         }
       } else if (ambito === "proyectos") {
-        hashtagEspecifico += "_proyectos"; // #VZN26_proyectos
+        hashtagEspecifico += "_proyectos";
       }
 
-      // 3. Hashtag geolocalizado (opcional)
       let geoTags = '';
       if (ubicacion && ubicacion.trim().length > 0) {
         const locClean = ubicacion.trim()
-          .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // quita tildes
-          .replace(/[^a-zA-Z0-9]/g, '') // solo alfanuméricos
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-zA-Z0-9]/g, '')
           .toUpperCase();
         if (locClean.length > 0) {
           geoTags = `#SOS${locClean}`;
         }
       }
 
-      // 4. Sanitizar tendencias (asegurar # al inicio)
       const tendenciasSanitizadas = tendenciasDia
         .filter(t => t && t.trim().length > 0)
         .map(t => t.startsWith('#') ? t : `#${t}`)
         .join(' ');
 
-      // 5. Armar bloque de hashtags (evitar duplicados)
       const tagsSet = new Set([raiz, hashtagEspecifico]);
       if (geoTags) tagsSet.add(geoTags);
       if (tendenciasSanitizadas) {
@@ -79,13 +69,8 @@
       }
       const bloqueHashtags = Array.from(tagsSet).join(' ').trim();
 
-      // 6. Devolver texto completo
       return `${userText}\n\n${bloqueHashtags}`;
     }
-
-    // ============================================================
-    // Componente React
-    // ============================================================
 
     function NormalizarApp() {
       const [ambito, setAmbito] = useState('ls');
@@ -96,7 +81,6 @@
       const [preview, setPreview] = useState('');
       const [error, setError] = useState('');
 
-      // Cargar tendencias desde Supabase (solo las tendencias)
       useEffect(() => {
         async function loadTrends() {
           const { data, error } = await supabaseClient
@@ -126,7 +110,6 @@
         return () => clearInterval(interval);
       }, []);
 
-      // Sanitización básica
       function sanitizeText(text) {
         let clean = text.replace(/\b(ba\s?){2,}/gi, '');
         const insults = ['puto', 'marico', 'guevon', 'malparido', 'hdp', 'hijueputa'];
@@ -145,11 +128,9 @@
         }
         setError('');
 
-        // Generar el bloque con la fórmula
         const result = generarTextoNormalizado(sanitized, ambito, accion, tendencias, ubicacion);
         setPreview(result);
 
-        // Copiar al portapapeles
         navigator.clipboard.writeText(result)
           .then(() => alert('✅ Bloque copiado. Ahora pégalo en tus redes.'))
           .catch(() => alert('⚠️ Copiá manualmente el texto desde la vista previa.'));
@@ -160,7 +141,6 @@
       return (
         <div className="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
           <div>
-            {/* Header */}
             <header className="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4">
               <nav className="flex justify-between items-center max-w-7xl mx-auto h-16">
                 <div className="flex items-center gap-3">
@@ -181,7 +161,6 @@
               </nav>
             </header>
 
-            {/* Contenido principal */}
             <main className="p-4 md:p-6 max-w-4xl mx-auto">
               <div className="bg-[#090d16]/80 backdrop-blur-md p-6 rounded-xl border border-gray-800 shadow-xl">
                 <h2 className="text-xl font-bold text-white font-mono mb-4 flex items-center gap-2">
@@ -192,7 +171,6 @@
                 </p>
 
                 <div className="space-y-4 text-xs font-mono">
-                  {/* Ámbito */}
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ámbito</label>
                     <select value={ambito} onChange={e => setAmbito(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all">
@@ -202,7 +180,6 @@
                     </select>
                   </div>
 
-                  {/* Acción (solo si ámbito es dn) */}
                   {showAccion && (
                     <div>
                       <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Acción (para #VZN26_dn)</label>
@@ -215,7 +192,6 @@
                     </div>
                   )}
 
-                  {/* Leyenda de códigos */}
                   <div className="bg-gray-950/40 p-3 rounded-lg border border-gray-800">
                     <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Códigos de hashtag disponibles</p>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[10px] font-mono">
@@ -246,14 +222,12 @@
                     </div>
                   </div>
 
-                  {/* Ubicación opcional */}
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ubicación (opcional)</label>
                     <input type="text" value={ubicacion} onChange={e => setUbicacion(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-blue-500 transition-all" placeholder="Ej: Caracas, Valencia, Zulia..." />
                     <p className="text-[10px] text-gray-500 mt-1">Si escribes una ciudad, se generará un hashtag geolocalizado (ej. #SOSCaracas).</p>
                   </div>
 
-                  {/* Texto del usuario */}
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tu descripción o enlace</label>
                     <textarea value={userText} onChange={e => setUserText(e.target.value)} rows="4" className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-blue-500 transition-all resize-none" placeholder="Escribí al menos 80 caracteres..." />
@@ -261,7 +235,6 @@
                     {error && <p className="text-red-400 text-[11px] mt-1">{error}</p>}
                   </div>
 
-                  {/* Tendencias actuales */}
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tendencias del día (inyección)</label>
                     <div className="flex flex-wrap gap-1 bg-gray-950 p-2 rounded-lg border border-gray-800 min-h-8">
@@ -278,12 +251,10 @@
                     <p className="text-[10px] text-gray-500 mt-1">Estos hashtags se añadirán automáticamente a tu publicación.</p>
                   </div>
 
-                  {/* Botón generar */}
                   <button onClick={handleGenerate} className="w-full bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white py-2.5 rounded-lg font-bold uppercase tracking-wider shadow-lg shadow-blue-900/20 active:scale-[0.99] transition-all">
                     Generar y copiar
                   </button>
 
-                  {/* Vista previa */}
                   {preview && (
                     <div className="mt-4">
                       <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Vista previa generada:</label>
@@ -295,12 +266,20 @@
             </main>
           </div>
 
-          {/* Footer */}
-          <footer className="bg-[#070b12] border-t border-gray-900/60 p-6 text-center text-gray-500 space-y-4 font-mono text-xs">
-            <div className="max-w-5xl mx-auto text-[10px] text-gray-500/80 leading-relaxed border-b border-gray-950 pb-4">
-              <strong className="text-gray-400">AVISO LEGAL SOBERANO:</strong> Esta herramienta opera como un canal neutral descentralizado para el almacenamiento criptográfico de auditoría colectiva. La información aquí contenida depende estrictamente de las inserciones distribuidas de los usuarios. El equipo de desarrollo e infraestructura internacional no asume responsabilidad civil, penal o regulatoria por los enlaces o datos suministrados por terceros.
+          {/* Footer unificado */}
+          <footer className="bg-[#070b12] border-t border-gray-900/60 p-6 text-center text-gray-400 space-y-4 font-mono text-xs">
+            <div className="max-w-5xl mx-auto space-y-3">
+              <div className="text-[11px] text-gray-400 font-semibold">Aviso de Neutralidad Tecnológica y Auditoría Ciudadana</div>
+              <div className="text-[10px] text-gray-400/80 leading-relaxed border-b border-gray-800/50 pb-3">
+                Esta plataforma opera exclusivamente como un nodo de infraestructura tecnológica automatizado para la indexación de archivos y documentos de interés público, al amparo del Artículo 13 de la Convención Americana sobre Derechos Humanos y la Convención de las Naciones Unidas contra la Corrupción.
+                <br /><br />
+                El sistema no genera, edita, promociona ni valida la veracidad de los reportes emitidos de forma anónima por los usuarios. Toda mención a presuntos hechos delictivos debe entenderse bajo el principio de inocencia y en carácter potencial (artículo atribuible a las fuentes documentales aportadas). La plataforma se compromete a remover de forma expedita cualquier registro que, mediante el canal de impugnación oficial, se demuestre fehacientemente como falso, injurioso o violatorio de la legislación internacional de derechos humanos.
+              </div>
+              <div className="text-[10px] text-gray-500/80 leading-relaxed">
+                <span className="font-bold text-gray-400">Política de Zero-Knowledge:</span> Esta plataforma no registra, almacena ni procesa direcciones IP, metadatos de conectividad, geolocalizaciones precisas de red de los nodos emisores, ni datos de identidad de los usuarios de conformidad con las directrices globales de privacidad por diseño (Privacy by Design).
+              </div>
             </div>
-            <div className="space-y-1">
+            <div className="pt-3 border-t border-gray-900/40 space-y-1">
               <p className="font-bold text-gray-400 text-xs tracking-tight">
                 Proyecto Córdoba-Caracas · Desarrollado por Andalucia Projects 🇦🇷
               </p>

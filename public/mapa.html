@@ -16,49 +16,58 @@
 </head>
 <body class="bg-[#030712] text-gray-200 font-sans antialiased">
   <div class="min-h-screen flex flex-col bg-radial from-gray-900 via-gray-950 to-black">
-    <header class="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4">
-      <nav class="flex justify-between items-center max-w-7xl mx-auto h-16">
-        <div class="flex items-center gap-3">
-          <span class="text-red-500 animate-pulse font-bold">●</span>
-          <h1 class="text-md font-black tracking-wider text-white uppercase font-mono">SOS VEN - PORTAL</h1>
-          <span class="text-[10px] text-gray-500 font-mono bg-gray-900 border border-gray-800 px-1.5 py-0.5 rounded flex items-center gap-1">
+    <header className="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4">
+      <nav className="flex justify-between items-center max-w-7xl mx-auto h-16">
+        <div className="flex items-center gap-3">
+          <span className="text-red-500 animate-pulse font-bold">●</span>
+          <h1 className="text-md font-black tracking-wider text-white uppercase font-mono">SOS VEN - PORTAL</h1>
+          <span className="text-[10px] text-gray-500 font-mono bg-gray-900 border border-gray-800 px-1.5 py-0.5 rounded flex items-center gap-1">
             v1.2.0
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block ml-1"></span>
-            <span class="text-emerald-400 text-[8px] font-bold">NODO</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block ml-1"></span>
+            <span className="text-emerald-400 text-[8px] font-bold">NODO</span>
           </span>
         </div>
-        <div class="flex gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800/80 text-xs font-mono">
-          <a href="/" class="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Inicio</a>
-          <a href="/normalizar.html" class="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Normalizar</a>
-          <a href="/mapa.html" class="bg-gray-900 text-white border border-gray-800 px-3 py-1.5 rounded-md transition-all shadow-sm">Mapa</a>
-          <a href="/devs.html" class="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Devs</a>
+        <div className="flex gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800/80 text-xs font-mono">
+          <a href="/" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Inicio</a>
+          <a href="/normalizar.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Normalizar</a>
+          <a href="/mapa.html" className="bg-gray-900 text-white border border-gray-800 px-3 py-1.5 rounded-md transition-all shadow-sm">Mapa</a>
+          <a href="/devs.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Devs</a>
         </div>
       </nav>
     </header>
 
-    <div class="px-4 pt-2">
-      <div id="stats" class="stats-box inline-block">Cargando estadísticas…</div>
+    <div className="px-4 pt-2">
+      <div id="stats" className="stats-box inline-block">Cargando estadísticas…</div>
     </div>
 
-    <div id="map" class="w-full flex-1 h-[calc(100vh-130px)]"></div>
+    <div id="map" className="w-full flex-1 h-[calc(100vh-130px)]"></div>
 
-    <div class="absolute top-28 right-3 z-[1000] flex flex-col gap-1">
-      <button onclick="filterLayer('instalacion_peligrosa')" class="layer-btn bg-yellow-600/80 hover:bg-yellow-600">☢ Peligrosas</button>
-      <button onclick="filterLayer('incendio')" class="layer-btn bg-red-600/80 hover:bg-red-600">🔥 Incendios</button>
-      <button onclick="filterLayer('contaminacion')" class="layer-btn bg-green-600/80 hover:bg-green-600">🌫 Aire</button>
-      <button onclick="filterLayer('sismo')" class="layer-btn bg-purple-600/80 hover:bg-purple-600">🌍 Réplicas</button>
-      <button onclick="filterLayer('all')" class="layer-btn bg-gray-600/80 hover:bg-gray-600">📌 Todo</button>
+    <div className="absolute top-28 right-3 z-[1000] flex flex-col gap-1">
+      <button onclick="filterLayer('instalacion_peligrosa')" className="layer-btn bg-yellow-600/80 hover:bg-yellow-600">☢ Peligrosas</button>
+      <button onclick="filterLayer('incendio')" className="layer-btn bg-red-600/80 hover:bg-red-600">🔥 Incendios</button>
+      <button onclick="filterLayer('contaminacion')" className="layer-btn bg-green-600/80 hover:bg-green-600">🌫 Aire</button>
+      <button onclick="filterLayer('sismo')" className="layer-btn bg-purple-600/80 hover:bg-purple-600">🌍 Réplicas</button>
+      <button onclick="filterLayer('all')" className="layer-btn bg-gray-600/80 hover:bg-gray-600">📌 Todo</button>
     </div>
 
-    <footer class="bg-[#070b12] border-t border-gray-900/60 p-6 text-center text-gray-500 space-y-4 font-mono text-xs">
-      <div class="max-w-5xl mx-auto text-[10px] text-gray-500/80 leading-relaxed border-b border-gray-950 pb-4">
-        <strong class="text-gray-400">AVISO LEGAL SOBERANO:</strong> Esta herramienta opera como un canal neutral descentralizado para el almacenamiento criptográfico de auditoría colectiva. La información aquí contenida depende estrictamente de las inserciones distribuidas de los usuarios. El equipo de desarrollo e infraestructura internacional no asume responsabilidad civil, penal o regulatoria por los enlaces o datos suministrados por terceros.
+    <!-- Footer unificado -->
+    <footer className="bg-[#070b12] border-t border-gray-900/60 p-6 text-center text-gray-400 space-y-4 font-mono text-xs">
+      <div className="max-w-5xl mx-auto space-y-3">
+        <div className="text-[11px] text-gray-400 font-semibold">Aviso de Neutralidad Tecnológica y Auditoría Ciudadana</div>
+        <div className="text-[10px] text-gray-400/80 leading-relaxed border-b border-gray-800/50 pb-3">
+          Esta plataforma opera exclusivamente como un nodo de infraestructura tecnológica automatizado para la indexación de archivos y documentos de interés público, al amparo del Artículo 13 de la Convención Americana sobre Derechos Humanos y la Convención de las Naciones Unidas contra la Corrupción.
+          <br /><br />
+          El sistema no genera, edita, promociona ni valida la veracidad de los reportes emitidos de forma anónima por los usuarios. Toda mención a presuntos hechos delictivos debe entenderse bajo el principio de inocencia y en carácter potencial (artículo atribuible a las fuentes documentales aportadas). La plataforma se compromete a remover de forma expedita cualquier registro que, mediante el canal de impugnación oficial, se demuestre fehacientemente como falso, injurioso o violatorio de la legislación internacional de derechos humanos.
+        </div>
+        <div className="text-[10px] text-gray-500/80 leading-relaxed">
+          <span className="font-bold text-gray-400">Política de Zero-Knowledge:</span> Esta plataforma no registra, almacena ni procesa direcciones IP, metadatos de conectividad, geolocalizaciones precisas de red de los nodos emisores, ni datos de identidad de los usuarios de conformidad con las directrices globales de privacidad por diseño (Privacy by Design).
+        </div>
       </div>
-      <div class="space-y-1">
-        <p class="font-bold text-gray-400 text-xs tracking-tight">
+      <div className="pt-3 border-t border-gray-900/40 space-y-1">
+        <p className="font-bold text-gray-400 text-xs tracking-tight">
           Proyecto Córdoba-Caracas · Desarrollado por Andalucia Projects 🇦🇷
         </p>
-        <p class="text-[10px] text-gray-600">
+        <p className="text-[10px] text-gray-600">
           © 2026 Andalucia Projects · Framework de desarrollo con fines educativos e impacto social humanitario. Licencias libres y código abierto.
         </p>
       </div>
