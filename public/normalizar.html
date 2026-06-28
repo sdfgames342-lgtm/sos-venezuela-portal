@@ -22,65 +22,64 @@
     );
 
     // ============================================================
-    // Lógica determinista de normalización (sin IA)
+    // Lista de todos los hashtags disponibles
     // ============================================================
+    const ALL_TAGS = [
+      { id: 'ls', label: '#VZN26_ls', desc: 'Listas / Actas' },
+      { id: 'fakecf', label: '#VZN26_dn_fakecf', desc: 'Estafa / Fraude' },
+      { id: 'realcf', label: '#VZN26_dn_realcf', desc: 'Recaudación real' },
+      { id: 'abuse', label: '#VZN26_dn_abuse', desc: 'Abuso de autoridad' },
+      { id: 'hoax', label: '#VZN26_dn_hoax', desc: 'Desmentido / Fake news' },
+      { id: 'proyectos', label: '#VZN26_proyectos', desc: 'Proyectos comunitarios' },
+    ];
 
-    function generarTextoNormalizado(userText, ambito, accion, tendenciasDia = [], ubicacion = '') {
+    // ============================================================
+    // Lógica de normalización (sin IA)
+    // ============================================================
+    function generarTextoNormalizado(userText, tagsSeleccionados, tendenciasDia = [], ubicacion = '') {
       const raiz = "#VZN26";
-      let hashtagEspecifico = raiz;
+      const tagsSet = new Set([raiz]);
 
-      if (ambito === "ls") {
-        hashtagEspecifico += "_ls";
-      } else if (ambito === "dn") {
-        hashtagEspecifico += "_dn";
-        const mapeoAcciones = {
-          fakecf: "_fakecf",
-          realcf: "_realcf",
-          abuse: "_abuse",
-          hoax: "_hoax"
-        };
-        if (mapeoAcciones[accion]) {
-          hashtagEspecifico += mapeoAcciones[accion];
-        }
-      } else if (ambito === "proyectos") {
-        hashtagEspecifico += "_proyectos";
-      }
+      // Agregar los tags seleccionados (ya incluyen el #)
+      tagsSeleccionados.forEach(tag => tagsSet.add(tag));
 
-      let geoTags = '';
+      // Hashtag geolocalizado (opcional)
       if (ubicacion && ubicacion.trim().length > 0) {
         const locClean = ubicacion.trim()
           .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
           .replace(/[^a-zA-Z0-9]/g, '')
           .toUpperCase();
         if (locClean.length > 0) {
-          geoTags = `#SOS${locClean}`;
+          tagsSet.add(`#SOS${locClean}`);
         }
       }
 
+      // Tendencias del día
       const tendenciasSanitizadas = tendenciasDia
         .filter(t => t && t.trim().length > 0)
         .map(t => t.startsWith('#') ? t : `#${t}`)
         .join(' ');
-
-      const tagsSet = new Set([raiz, hashtagEspecifico]);
-      if (geoTags) tagsSet.add(geoTags);
       if (tendenciasSanitizadas) {
         tendenciasSanitizadas.split(' ').forEach(t => tagsSet.add(t));
       }
-      const bloqueHashtags = Array.from(tagsSet).join(' ').trim();
 
+      const bloqueHashtags = Array.from(tagsSet).join(' ').trim();
       return `${userText}\n\n${bloqueHashtags}`;
     }
 
+    // ============================================================
+    // Componente principal
+    // ============================================================
     function NormalizarApp() {
-      const [ambito, setAmbito] = useState('ls');
-      const [accion, setAccion] = useState('');
+      const [selectedTags, setSelectedTags] = useState([]);
       const [userText, setUserText] = useState('');
       const [ubicacion, setUbicacion] = useState('');
       const [tendencias, setTendencias] = useState([]);
       const [preview, setPreview] = useState('');
       const [error, setError] = useState('');
+      const MAX_SELECT = 3;
 
+      // Cargar tendencias desde Supabase
       useEffect(() => {
         async function loadTrends() {
           const { data, error } = await supabaseClient
@@ -110,6 +109,7 @@
         return () => clearInterval(interval);
       }, []);
 
+      // Sanitización de texto
       function sanitizeText(text) {
         let clean = text.replace(/\b(ba\s?){2,}/gi, '');
         const insults = ['puto', 'marico', 'guevon', 'malparido', 'hdp', 'hijueputa'];
@@ -120,6 +120,25 @@
         return clean.trim();
       }
 
+      // Alternar selección de un tag
+      const toggleTag = (tagId) => {
+        const tag = ALL_TAGS.find(t => t.id === tagId);
+        if (!tag) return;
+
+        setSelectedTags(prev => {
+          const isSelected = prev.some(t => t.id === tagId);
+          if (isSelected) {
+            return prev.filter(t => t.id !== tagId);
+          } else {
+            if (prev.length >= MAX_SELECT) {
+              alert(`Solo puedes seleccionar hasta ${MAX_SELECT} hashtags.`);
+              return prev;
+            }
+            return [...prev, tag];
+          }
+        });
+      };
+
       const handleGenerate = () => {
         const sanitized = sanitizeText(userText);
         if (sanitized.length < 80) {
@@ -128,7 +147,13 @@
         }
         setError('');
 
-        const result = generarTextoNormalizado(sanitized, ambito, accion, tendencias, ubicacion);
+        if (selectedTags.length === 0) {
+          setError('Selecciona al menos un hashtag de la lista.');
+          return;
+        }
+
+        const tagsLabels = selectedTags.map(t => t.label);
+        const result = generarTextoNormalizado(sanitized, tagsLabels, tendencias, ubicacion);
         setPreview(result);
 
         navigator.clipboard.writeText(result)
@@ -136,7 +161,7 @@
           .catch(() => alert('⚠️ Copiá manualmente el texto desde la vista previa.'));
       };
 
-      const showAccion = ambito === 'dn';
+      const isSelected = (tagId) => selectedTags.some(t => t.id === tagId);
 
       return (
         <div className="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
@@ -171,63 +196,40 @@
                 </p>
 
                 <div className="space-y-4 text-xs font-mono">
+                  {/* Selector de hashtags con botones */}
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ámbito</label>
-                    <select value={ambito} onChange={e => setAmbito(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all">
-                      <option value="ls">Listas / Actas (#VZN26_ls)</option>
-                      <option value="dn">Donaciones / Denuncias (#VZN26_dn_*)</option>
-                      <option value="proyectos">Proyectos (#VZN26_proyectos)</option>
-                    </select>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
+                      Selecciona hasta {MAX_SELECT} hashtags
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {ALL_TAGS.map(tag => (
+                        <button
+                          key={tag.id}
+                          onClick={() => toggleTag(tag.id)}
+                          className={`px-3 py-1.5 rounded-lg border transition-all font-mono text-[11px] ${
+                            isSelected(tag.id)
+                              ? 'bg-blue-600/40 border-blue-500 text-blue-200 shadow-lg shadow-blue-900/30'
+                              : 'bg-gray-950/60 border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200'
+                          }`}
+                        >
+                          {tag.label}
+                          <span className="text-[9px] text-gray-500 block">{tag.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-2">
+                      {selectedTags.length} de {MAX_SELECT} seleccionados
+                    </p>
                   </div>
 
-                  {showAccion && (
-                    <div>
-                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Acción (para #VZN26_dn)</label>
-                      <select value={accion} onChange={e => setAccion(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all">
-                        <option value="fakecf">Fake CF (estafa) → #VZN26_dn_fakecf</option>
-                        <option value="realcf">Real CF (auditada) → #VZN26_dn_realcf</option>
-                        <option value="abuse">Abuso militar/policial → #VZN26_dn_abuse</option>
-                        <option value="hoax">Desmentido (fake news) → #VZN26_dn_hoax</option>
-                      </select>
-                    </div>
-                  )}
-
-                  <div className="bg-gray-950/40 p-3 rounded-lg border border-gray-800">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Códigos de hashtag disponibles</p>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-[10px] font-mono">
-                      <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
-                        <span className="text-emerald-400">#VZN26_ls</span>
-                        <span className="text-gray-500 block">Listas / Actas</span>
-                      </div>
-                      <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
-                        <span className="text-red-400">#VZN26_dn_fakecf</span>
-                        <span className="text-gray-500 block">Estafa / Fraude</span>
-                      </div>
-                      <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
-                        <span className="text-green-400">#VZN26_dn_realcf</span>
-                        <span className="text-gray-500 block">Recaudación real</span>
-                      </div>
-                      <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
-                        <span className="text-purple-400">#VZN26_dn_abuse</span>
-                        <span className="text-gray-500 block">Abuso de autoridad</span>
-                      </div>
-                      <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
-                        <span className="text-yellow-400">#VZN26_dn_hoax</span>
-                        <span className="text-gray-500 block">Desmentido / Fake news</span>
-                      </div>
-                      <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
-                        <span className="text-blue-400">#VZN26_proyectos</span>
-                        <span className="text-gray-500 block">Proyectos comunitarios</span>
-                      </div>
-                    </div>
-                  </div>
-
+                  {/* Ubicación opcional */}
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ubicación (opcional)</label>
                     <input type="text" value={ubicacion} onChange={e => setUbicacion(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-blue-500 transition-all" placeholder="Ej: Caracas, Valencia, Zulia..." />
                     <p className="text-[10px] text-gray-500 mt-1">Si escribes una ciudad, se generará un hashtag geolocalizado (ej. #SOSCaracas).</p>
                   </div>
 
+                  {/* Texto del usuario */}
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tu descripción o enlace</label>
                     <textarea value={userText} onChange={e => setUserText(e.target.value)} rows="4" className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-blue-500 transition-all resize-none" placeholder="Escribí al menos 80 caracteres..." />
@@ -235,6 +237,7 @@
                     {error && <p className="text-red-400 text-[11px] mt-1">{error}</p>}
                   </div>
 
+                  {/* Tendencias del día */}
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tendencias del día (inyección)</label>
                     <div className="flex flex-wrap gap-1 bg-gray-950 p-2 rounded-lg border border-gray-800 min-h-8">
