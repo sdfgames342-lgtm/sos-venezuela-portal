@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>SOS Venezuela – Emergencia Sísmica 2026</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .layer-btn { padding: 6px 12px; margin: 2px; border-radius: 4px; font-size: 14px; }
+    .stats-box { background: rgba(0,0,0,0.7); padding: 6px; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-gray-900 text-white">
+  <header class="p-3 bg-red-700 flex justify-between items-center shadow-lg">
+    <div>
+      <h1 class="text-xl font-bold">Venezuela Sismo 2026</h1>
+      <p class="text-xs opacity-80">Daños · Contaminación · Recursos de rescate</p>
+    </div>
+    <div id="stats" class="stats-box text-xs">
+      Cargando estadísticas...
+    </div>
+  </header>
+
+  <div id="map" class="w-full h-[calc(100vh-64px)]"></div>
+
+  <!-- Panel de capas -->
+  <div class="absolute top-20 right-3 z-[1000] flex flex-col gap-1">
+    <button onclick="filterLayer('infraestructura')" class="layer-btn bg-blue-600">🏥 Infra</button>
+    <button onclick="filterLayer('daño_estructural')" class="layer-btn bg-orange-600">🏚 Daños</button>
+    <button onclick="filterLayer('contaminacion')" class="layer-btn bg-green-600">🌫 Aire</button>
+    <button onclick="filterLayer('all')" class="layer-btn bg-gray-500">📌 Todo</button>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    const map = L.map('map').setView([10.50, -66.91], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    let allData = [];
+    const markersLayer = L.layerGroup().addTo(map);
+
+    // Íconos personalizados (pueden ser locales, aquí uso unos genéricos de CDN)
+    const icons = {
+      infraestructura: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [24,24] }),
+      daño_estructural: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684847.png', iconSize: [24,24] }),
+      contaminacion: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1165/1165736.png', iconSize: [24,24] })
+    };
+
+    fetch('/data.json')
+      .then(res => res.json())
+      .then(data => {
+        allData = data;
+        updateStats(data);
+        renderMarkers(data);
+      })
+      .catch(e => console.error('Error cargando datos:', e));
+
+    function renderMarkers(data) {
+      markersLayer.clearLayers();
+      data.forEach(p => {
+        const icon = icons[p.category] || icons.infraestructura;
+        const popupContent = `<b>${p.type}</b><br>${
+          p.grade ? 'Daño: ' + p.grade + '<br>' : ''
+        }${
+          p.valor ? p.valor + ' ' + p.unidad + '<br>' : ''
+        }Estado: ${p.status || 'sin datos'}`;
+        L.marker([p.lat, p.lng], { icon }).bindPopup(popupContent).addTo(markersLayer);
+      });
+    }
+
+    function filterLayer(category) {
+      if (category === 'all') return renderMarkers(allData);
+      const filtered = allData.filter(p => p.category === category);
+      renderMarkers(filtered);
+    }
+
+    function updateStats(data) {
+      const damageCount = data.filter(p => p.category === 'daño_estructural').length;
+      const airVals = data.filter(p => p.category === 'contaminacion' && p.valor).map(p => p.valor);
+      const avgAir = airVals.length ? (airVals.reduce((a,b)=>a+b,0)/airVals.length).toFixed(1) : 'N/D';
+      document.getElementById('stats').innerHTML = 
+        `🏚 Daños: <b>${damageCount}</b> · 🌫 PM2.5 prom: <b>${avgAir}</b>`;
+    }
+  </script>
+</body>
+</html>
