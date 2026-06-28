@@ -134,16 +134,23 @@ function PortalApp() {
                 Infraestructura Soberana Anti-Censura · Proyecto Córdoba-Caracas
               </span>
             </div>
-            <div className="flex gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800/80 text-xs font-mono">
-              <a href="/" className="bg-gray-900 text-white border border-gray-800 px-3 py-1.5 rounded-md transition-all shadow-sm">Inicio</a>
-              <a href="/normalizar.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Normalizar</a>
-              <a href="/mapa.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Mapa</a>
-              <a href="#desarrolladores" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Devs</a>
+            <div className="flex items-center gap-3">
+              {/* Indicador de estado del nodo */}
+              <span className="flex items-center gap-1.5 text-[10px] font-mono bg-emerald-950/40 border border-emerald-900/40 text-emerald-400 px-2 py-1 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Nodo activo
+              </span>
+              <div className="flex gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800/80 text-xs font-mono">
+                <a href="/" className="bg-gray-900 text-white border border-gray-800 px-3 py-1.5 rounded-md transition-all shadow-sm">Inicio</a>
+                <a href="/normalizar.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Normalizar</a>
+                <a href="/mapa.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Mapa</a>
+                <a href="#desarrolladores" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Devs</a>
+              </div>
             </div>
           </nav>
         </header>
 
-        {/* ===== HERO + 7 TARJETAS ===== */}
+        {/* ===== HERO + 6 TARJETAS (sin la 7) ===== */}
         <section className="bg-gradient-to-b from-[#090d16] to-transparent py-10 px-4 border-b border-gray-900/60">
           <div className="max-w-7xl mx-auto">
             <div className="max-w-3xl mb-8">
@@ -155,7 +162,7 @@ function PortalApp() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4">
               {/* Card 1: Match Seguro */}
               <a href="#repositorio" className="group card p-4 rounded-xl border border-emerald-500/10 hover:border-emerald-500/30 transition-all bg-gradient-to-b from-transparent to-emerald-950/5 flex flex-col justify-between h-32 shadow-lg shadow-black/40">
                 <div>
@@ -227,37 +234,9 @@ function PortalApp() {
                 </div>
                 <span className="text-[10px] text-gray-400 font-mono flex items-center gap-1 group-hover:underline">Ir a Consola →</span>
               </a>
-
-              {/* Card 7: Estado Nodo */}
-              <div className="card p-4 rounded-xl border border-gray-800 flex flex-col justify-between h-32 shadow-lg shadow-black/40">
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-gray-400">7. Estado Nodo</h3>
-                    <span className="text-xs text-emerald-400 bg-emerald-950/60 border border-emerald-900 px-1.5 py-0.5 rounded font-mono font-semibold animate-pulse">ONLINE</span>
-                  </div>
-                  <p className="text-[11px] text-gray-400">Repositorio distribuido activo y sincronizado con Supabase.</p>
-                </div>
-                <span className="text-[10px] text-gray-500 font-mono">Device: {fingerprint.substring(0,12)}...</span>
-              </div>
             </div>
           </div>
         </section>
-
-        {/* ===== BANNER API ===== */}
-        <div className="max-w-7xl mx-auto px-4 mt-6">
-          <div className="bg-emerald-950/10 border border-emerald-800/30 p-4 rounded-xl text-xs font-mono relative overflow-hidden shadow-inner">
-            <div className="absolute top-0 right-0 p-8 bg-emerald-500/5 rounded-full blur-xl pointer-events-none"></div>
-            <div className="flex items-center gap-2 text-emerald-400 font-bold mb-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
-              <span>[SISTEMA DE TRANSFERENCIA DE DATOS ACTIVO]</span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-gray-400 text-[11px]">
-              <div><strong className="text-emerald-500/90">GET /api/v1/registry</strong> — Payload JSON de contingencia</div>
-              <div><strong className="text-emerald-500/90">GET /api/v1/registry/export</strong> — Volcado CSV forense</div>
-              <div><strong className="text-emerald-500/90">GET /api/v1/trends/normalized</strong> — Semántica de tendencias</div>
-            </div>
-          </div>
-        </div>
 
         {/* ===== REPOSITORIO (formulario + listado) ===== */}
         <main id="repositorio" className="p-4 md:p-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -269,8 +248,6 @@ function PortalApp() {
                 <h2 className="text-sm font-bold uppercase tracking-wider text-white font-mono">Indexar Reporte Forzado</h2>
               </div>
               <form onSubmit={handleSubmit} className="space-y-4 mt-4 text-xs font-mono">
-                {/* ... (el mismo formulario que ya tenías) ... */}
-                {/* Para no alargar, mantengo el contenido que ya estaba en index.html, pero lo resumo */}
                 <div>
                   <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Categoría Operativa</label>
                   <select value={type} onChange={e => setType(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/30 transition-all">
@@ -318,10 +295,13 @@ function PortalApp() {
                 )}
               </form>
             </div>
-            <div className="bg-gradient-to-br from-[#090d16] to-[#030712] p-4 rounded-xl border border-gray-900 text-[11px] space-y-2 font-mono">
-              <h3 className="font-bold text-red-500 uppercase tracking-wide flex items-center gap-1.5">🛡️ Andalucia Projects</h3>
-              <p className="text-gray-400 leading-relaxed">
-                Nuestra misión es proveer software soberano de alto rendimiento institucional para proteger la veracidad informativa en entornos críticos.
+            {/* Breve info de Andalucia Projects (solo título) */}
+            <div className="bg-gradient-to-br from-[#090d16] to-[#030712] p-4 rounded-xl border border-gray-900 text-[11px] font-mono">
+              <h3 className="font-bold text-red-500 uppercase tracking-wide flex items-center gap-1.5">
+                🛡️ Andalucia Projects
+              </h3>
+              <p className="text-gray-400 leading-relaxed mt-1">
+                Software soberano de alto rendimiento institucional para proteger la veracidad informativa en entornos críticos.
               </p>
             </div>
           </div>
@@ -401,7 +381,7 @@ function PortalApp() {
           </div>
         </main>
 
-        {/* ===== MISIÓN, VISIÓN Y OBJETIVO ===== */}
+        {/* ===== MISIÓN, VISIÓN Y OBJETIVO (sin la sección de Andalucia Projects repetida) ===== */}
         <section className="max-w-7xl mx-auto px-4 mt-8 pb-4 border-t border-gray-900 pt-8">
           <h3 className="text-lg font-bold text-white font-mono uppercase tracking-widest mb-6 text-center">🔭 Proyecto Córdoba-Caracas</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
