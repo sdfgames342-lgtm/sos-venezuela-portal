@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOS Venezuela – Repositorio Ciudadano</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/app.js"></script>
+  <style>
+    /* Estilos adicionales específicos de esta página si es necesario */
+  </style>
+</head>
+<body class="bg-[#030712] text-gray-200 font-sans antialiased selection:bg-red-500/30 selection:text-red-200">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+
+    // Usar funciones globales
+    const supabaseClient = window.getSupabase();
+    const generateFingerprint = window.generateFingerprint;
+
+    function PortalApp() {
+      const [fingerprint] = useState(generateFingerprint());
+      const [campaigns, setCampaigns] = useState([]);
+
+      const [title, setTitle] = useState('');
+      const [sourceUrl, setSourceUrl] = useState('');
+      const [evidenceUrl, setEvidenceUrl] = useState('');
+      const [desc, setDesc] = useState('');
+      const [type, setType] = useState('estafa');
+      const [feedback, setFeedback] = useState('');
+
+      const [lat, setLat] = useState('');
+      const [lng, setLng] = useState('');
+      const [locationLoading, setLocationLoading] = useState(false);
+
+      const loadRepository = useCallback(async () => {
+        const { data, error } = await supabaseClient
+          .from('crowdfunding_registry')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && data) setCampaigns(data);
+      }, []);
+
+      useEffect(() => {
+        loadRepository();
+      }, [loadRepository]);
+
+      const getLocation = () => {
+        if (!navigator.geolocation) {
+          alert('Tu navegador no soporta geolocalización.');
+          return;
+        }
+        setLocationLoading(true);
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setLat(pos.coords.latitude.toString());
+            setLng(pos.coords.longitude.toString());
+            setLocationLoading(false);
+          },
+          (err) => {
+            alert('No se pudo obtener la ubicación: ' + err.message);
+            setLocationLoading(false);
+          }
+        );
+      };
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!title || !sourceUrl) {
+          setFeedback('⚠️ Título y Enlace de origen son obligatorios.');
+          return;
+        }
+
+        const payload = {
+          title,
+          source_url: sourceUrl,
+          evidence_url: evidenceUrl,
+          description: desc,
+          category: type,
+          lat: lat ? parseFloat(lat) : null,
+          lng: lng ? parseFloat(lng) : null
+        };
+
+        const { error } = await supabaseClient
+          .from('crowdfunding_registry')
+          .insert(payload);
+
+        if (error) {
+          if (error.code === '23505') {
+            setFeedback('⚠️ Este enlace ya existe en el repositorio.');
+          } else {
+            setFeedback('⚠️ Error al registrar: ' + error.message);
+          }
+        } else {
+          setFeedback('✅ Registro exitoso. Guardado en el nodo criptográfico local.');
+          setTitle(''); setSourceUrl(''); setEvidenceUrl(''); setDesc('');
+          setLat(''); setLng('');
+          loadRepository();
+        }
+      };
+
+      const handleVote = async (campaignId, delta) => {
+        const { error: voteError } = await supabaseClient
+          .from('campaign_votes')
+          .insert({ campaign_id: campaignId, user_fingerprint: fingerprint, vote_type: delta });
+
+        if (voteError) {
+          alert('Tu dispositivo ya emitió un voto para este registro.');
+          return;
+        }
+
+        const campaign = campaigns.find(c => c.id === campaignId);
+        const newScore = (campaign.trust_score || 0) + delta;
+
+        await supabaseClient
+          .from('crowdfunding_registry')
+          .update({ trust_score: newScore })
+          .eq('id', campaignId);
+
+        loadRepository();
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
+          <div>
+            {/* Header Rediseñado (igual para todas) */}
+            <header className="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4">
+              <nav className="flex justify-between items-center max-w-7xl mx-auto h-16">
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-500 animate-pulse font-bold">●</span>
+                    <h1 className="text-md font-black tracking-wider text-white uppercase font-mono">
+                      SOS VEN - PORTAL
+                    </h1>
+                    <span className="text-[10px] text-gray-500 font-mono bg-gray-900 border border-gray-800 px-1.5 py-0.5 rounded">v1.2.0</span>
+                  </div>
+                  <span className="hidden md:inline text-[10px] text-red-400/80 font-mono tracking-tight mt-0.5">
+                    Infraestructura Soberana Anti-Censura · Proyecto Córdoba-Caracas
+                  </span>
+                </div>
+                <div className="flex gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800/80 text-xs font-mono">
+                  <a href="/" className="bg-gray-900 text-white border border-gray-800 px-3 py-1.5 rounded-md transition-all shadow-sm">Inicio</a>
+                  <a href="/normalizar.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Normalizar</a>
+                  <a href="/mapa.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Mapa</a>
+                </div>
+              </nav>
+            </header>
+
+            {/* Hero / Dashboard (igual que antes) */}
+            <section className="bg-gradient-to-b from-[#090d16] to-transparent py-10 px-4 border-b border-gray-900/60">
+              <div className="max-w-7xl mx-auto">
+                <div className="max-w-3xl mb-8">
+                  <h2 className="text-3xl md:text-4xl font-black text-white mb-3 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400">
+                    Contraloría e Inteligencia Ciudadana Decentralizada
+                  </h2>
+                  <p className="text-sm text-gray-400 leading-relaxed font-mono">
+                    Protección bajo arquitectura Zero-Knowledge fuera de la jurisdicción de censura local. Mapeamos incidentes, filtramos estafas en tiempo real y normalizamos el flujo de datos.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* Card 1 */}
+                  <a href="#repositorio" className="group bg-[#090d16]/40 backdrop-blur-sm p-4 rounded-xl border border-emerald-500/10 hover:border-emerald-500/30 transition-all bg-gradient-to-b from-transparent to-emerald-950/5 flex flex-col justify-between h-32 shadow-lg shadow-black/40">
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-emerald-400">1. Match Seguro</h3>
+                        <span className="text-lg group-hover:scale-110 transition-transform">💰</span>
+                      </div>
+                      <p className="text-[11px] text-gray-400">Filtrado y validación colectiva de cuentas de recaudación.</p>
+                    </div>
+                    <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1 group-hover:underline">Explorar Padrón ↓</span>
+                  </a>
+
+                  {/* Card 2 */}
+                  <a href="/normalizar.html" className="group bg-[#090d16]/40 backdrop-blur-sm p-4 rounded-xl border border-blue-500/10 hover:border-blue-500/30 transition-all bg-gradient-to-b from-transparent to-blue-950/5 flex flex-col justify-between h-32 shadow-lg shadow-black/40">
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-blue-400">2. Normalizar</h3>
+                        <span className="text-lg group-hover:scale-110 transition-transform">📊</span>
+                      </div>
+                      <p className="text-[11px] text-gray-400">Estructuración de hashtags para evadir bloqueos algorítmicos.</p>
+                    </div>
+                    <span className="text-[10px] text-blue-400 font-mono flex items-center gap-1 group-hover:underline">Estructurar Redes →</span>
+                  </a>
+
+                  {/* Card 3 */}
+                  <a href="#repositorio" className="group bg-[#090d16]/40 backdrop-blur-sm p-4 rounded-xl border border-red-500/10 hover:border-red-500/30 transition-all bg-gradient-to-b from-transparent to-red-950/5 flex flex-col justify-between h-32 shadow-lg shadow-black/40">
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-red-400">3. Canal Anónimo</h3>
+                        <span className="text-lg group-hover:scale-110 transition-transform">🕵️‍♂️</span>
+                      </div>
+                      <p className="text-[11px] text-gray-400">Denuncias forenses de abusos de autoridad sin rastro digital.</p>
+                    </div>
+                    <span className="text-[10px] text-red-400 font-mono flex items-center gap-1 group-hover:underline">Generar Alerta ↓</span>
+                  </a>
+
+                  {/* Card 4 */}
+                  <div className="bg-[#090d16]/60 p-4 rounded-xl border border-gray-800 flex flex-col justify-between h-32 shadow-lg">
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-gray-400">4. Estado Nodo</h3>
+                        <span className="text-xs text-emerald-400 bg-emerald-950/60 border border-emerald-900 px-1.5 py-0.5 rounded font-mono font-semibold animate-pulse">ONLINE</span>
+                      </div>
+                      <p className="text-[11px] text-gray-400">Repositorio distribuido activo y sincronizado con Supabase.</p>
+                    </div>
+                    <span className="text-[10px] text-gray-500 font-mono">Dispositivo: {fingerprint.substring(0,12)}...</span>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            {/* Banner de API Técnica */}
+            <div className="max-w-7xl mx-auto px-4 mt-6">
+              <div className="bg-emerald-950/10 border border-emerald-800/30 p-4 rounded-xl text-xs font-mono relative overflow-hidden shadow-inner">
+                <div className="absolute top-0 right-0 p-8 bg-emerald-500/5 rounded-full blur-xl pointer-events-none"></div>
+                <div className="flex items-center gap-2 text-emerald-400 font-bold mb-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+                  <span>[SISTEMA DE TRANSFERENCIA DE DATOS ACTIVO]</span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-gray-400 text-[11px]">
+                  <div><strong className="text-emerald-500/90">GET /api/v1/registry</strong> — Payload JSON de contingencia</div>
+                  <div><strong className="text-emerald-500/90">GET /api/v1/registry/export</strong> — Volcado CSV forense</div>
+                  <div><strong className="text-emerald-500/90">GET /api/v1/trends/normalized</strong> — Semántica de tendencias</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Grid Principal */}
+            <main id="repositorio" className="p-4 md:p-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+              {/* Columna Izquierda: Formulario Quirúrgico */}
+              <div className="lg:col-span-4 space-y-4">
+                <div className="bg-[#090d16]/80 backdrop-blur-md p-5 rounded-xl border border-gray-800 shadow-xl relative">
+                  <div className="flex items-center gap-2 mb-2 border-b border-gray-800 pb-3">
+                    <span className="text-red-500">📥</span>
+                    <h2 className="text-sm font-bold uppercase tracking-wider text-white font-mono">Indexar Reporte Forzado</h2>
+                  </div>
+
+                  <form onSubmit={handleSubmit} className="space-y-4 mt-4 text-xs font-mono">
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Categoría Operativa</label>
+                      <select value={type} onChange={e => setType(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/30 transition-all">
+                        <option value="estafa">🚨 Alerta: Campaña Falsa / Estafa</option>
+                        <option value="veridico">✅ Campañas de Recaudación Real</option>
+                        <option value="abuso">⚠️ Abuso de Autoridad (Militar/Policial)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Identificador / Implicado</label>
+                      <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-red-500 transition-all" placeholder="Ej: @cuenta_recaudadora / Destacamento X" />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">URL Origen / Perfil Evaluado</label>
+                      <input type="url" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-red-500 transition-all" placeholder="https://instagram.com/perfil..." />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Enlace a Constancia de Pruebas</label>
+                      <input type="url" value={evidenceUrl} onChange={e => setEvidenceUrl(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-red-500 transition-all" placeholder="https://t.me/canal_pruebas/..." />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Sustento Forense o Descripción</label>
+                      <textarea value={desc} onChange={e => setDesc(e.target.value)} rows="3" className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-red-500 transition-all resize-none" placeholder="Provea detalles precisos e incongruencias detectadas..." />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 bg-gray-950 p-2 rounded-lg border border-gray-900">
+                      <div>
+                        <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">Latitud</label>
+                        <input type="text" value={lat} onChange={e => setLat(e.target.value)} className="w-full p-1.5 bg-gray-900 border border-gray-800 rounded text-gray-300 placeholder-gray-700 text-center focus:outline-none" placeholder="-12.04" />
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">Longitud</label>
+                        <input type="text" value={lng} onChange={e => setLng(e.target.value)} className="w-full p-1.5 bg-gray-900 border border-gray-800 rounded text-gray-300 placeholder-gray-700 text-center focus:outline-none" placeholder="-77.04" />
+                      </div>
+                      <button type="button" onClick={getLocation} disabled={locationLoading} className="col-span-2 mt-1.5 w-full bg-blue-950/60 hover:bg-blue-900 border border-blue-800/40 text-blue-400 py-1 rounded text-[10px] font-bold transition-all disabled:opacity-50">
+                        {locationLoading ? 'Buscando Satélites...' : '📍 Capturar Geo-Ubicación'}
+                      </button>
+                    </div>
+
+                    <button type="submit" className="w-full bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white py-2.5 rounded-lg font-bold uppercase tracking-wider shadow-lg shadow-red-900/20 active:scale-[0.99] transition-all">
+                      Inyectar al Repositorio
+                    </button>
+
+                    {feedback && (
+                      <div className="p-2.5 rounded-lg bg-gray-950 border border-gray-800 text-center font-medium text-yellow-400 text-[11px] animate-fade-in">
+                        {feedback}
+                      </div>
+                    )}
+                  </form>
+                </div>
+
+                {/* Footer del Formulario */}
+                <div className="bg-gradient-to-br from-[#090d16] to-[#030712] p-4 rounded-xl border border-gray-900 text-[11px] space-y-2 font-mono">
+                  <h3 className="font-bold text-red-500 uppercase tracking-wide flex items-center gap-1.5">
+                    🛡️ Andalucia Projects
+                  </h3>
+                  <p className="text-gray-400 leading-relaxed">
+                    Nuestra misión es proveer software soberano de alto rendimiento institucional para proteger la veracidad informativa en entornos críticos.
+                  </p>
+                </div>
+              </div>
+
+              {/* Columna Derecha: Feed de Inteligencia Colectiva */}
+              <div className="lg:col-span-8 space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-[#090d16]/30 p-4 rounded-xl border border-gray-900">
+                  <div>
+                    <h2 className="text-lg font-bold text-white font-mono tracking-tight flex items-center gap-2">
+                      <span>📂</span> Historial de Auditoría Ciudadana
+                    </h2>
+                    <p className="text-xs text-gray-400 font-mono">Validación criptográfica en base a reputación colectiva de red.</p>
+                  </div>
+
+                  <div className="bg-blue-950/20 border border-blue-900/40 p-2.5 rounded-lg text-[11px] max-w-xs font-mono">
+                    <p className="text-blue-400/90">
+                      <strong>💻 Core Abierto:</strong> Cooperación civil sin fines de lucro en <a href="mailto:andalucia.terrabyte@gmail.com" className="underline font-bold text-blue-400">andalucia.terrabyte@gmail.com</a>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Listado de Campañas */}
+                <div className="space-y-3">
+                  {campaigns.length === 0 ? (
+                    <div className="text-center font-mono bg-[#090d16]/20 border border-gray-900 p-12 rounded-xl text-gray-600 text-xs">
+                      [ REPOSITORIO DE CONTINGENCIA VACÍO — ESPERANDO ENLACES COMUNITARIOS ]
+                    </div>
+                  ) : (
+                    campaigns.map(c => (
+                      <div key={c.id} className={`p-4 rounded-xl border bg-[#090d16]/60 backdrop-blur-sm transition-all shadow-md flex flex-col md:flex-row justify-between gap-4 ${
+                        c.category === 'estafa' ? 'border-red-950/40 hover:border-red-900/40' :
+                        c.category === 'abuso' ? 'border-purple-950/40 hover:border-purple-900/40' :
+                        'border-emerald-950/40 hover:border-emerald-900/40'
+                      }`}>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold tracking-wider uppercase border font-mono ${
+                              c.category === 'estafa' ? 'bg-red-950/50 text-red-400 border-red-900/30' :
+                              c.category === 'abuso' ? 'bg-purple-950/50 text-purple-400 border-purple-900/30' :
+                              'bg-emerald-950/50 text-emerald-400 border-emerald-900/30'
+                            }`}>
+                              {c.category === 'estafa' ? '🚨 Reporte: Fraude / Estafa' : c.category === 'abuso' ? '⚠️ Alerta Abuso' : '✅ Cuenta Verificada'}
+                            </span>
+                            {c.lat && c.lng && (
+                              <span className="text-[10px] text-gray-500 font-mono bg-gray-950 border border-gray-900 px-1.5 py-0.5 rounded">
+                                📍 {parseFloat(c.lat).toFixed(4)}, {parseFloat(c.lng).toFixed(4)}
+                              </span>
+                            )}
+                          </div>
+
+                          <h3 className="text-base font-bold text-white tracking-tight">{c.title}</h3>
+
+                          <p className="text-xs text-gray-400 leading-relaxed bg-black/40 p-3 rounded-lg border border-gray-950 font-mono">
+                            {c.description}
+                          </p>
+
+                          <div className="flex flex-wrap gap-4 text-[11px] font-mono pt-1">
+                            <a href={c.source_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 font-semibold underline decoration-blue-500/30">
+                              🔗 Enlace Incriminado / Post
+                            </a>
+                            {c.evidence_url && (
+                              <a href={c.evidence_url} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 font-semibold underline decoration-amber-500/30">
+                                📄 Enlace de Respaldo Forense
+                              </a>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Caja de Confianza / Votos Rediseñada */}
+                        <div className="flex md:flex-col justify-between items-center bg-gray-950/80 p-2.5 rounded-xl border border-gray-800/80 min-w-[100px] h-fit md:h-24 shadow-inner font-mono">
+                          <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Confianza</span>
+                          <span className={`text-base font-black tracking-tighter ${c.trust_score >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {c.trust_score >= 0 ? `+${c.trust_score}` : c.trust_score}
+                          </span>
+                          <div className="flex gap-2 border-t md:border-t-0 border-gray-900 pt-1 md:pt-0">
+                            <button onClick={() => handleVote(c.id, 1)} className="bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-900/40 text-emerald-400 w-6 h-6 flex items-center justify-center rounded transition-all font-bold text-xs">▲</button>
+                            <button onClick={() => handleVote(c.id, -1)} className="bg-red-950/40 hover:bg-red-900/60 border border-red-900/40 text-red-400 w-6 h-6 flex items-center justify-center rounded transition-all font-bold text-xs">▼</button>
+                          </div>
+                        </div>
+
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </main>
+
+            {/* Terminal del Desarrollador */}
+            <section className="max-w-7xl mx-auto px-4 mt-8 pb-8">
+              <div className="border-t border-gray-900 pt-6">
+                <h3 className="text-sm font-bold text-white font-mono uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <span className="text-blue-500">&gt;_</span> Consola de Integración de API Pública
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+                  <div className="bg-gray-950 border border-gray-900 p-4 rounded-xl shadow-md">
+                    <span className="text-emerald-400 font-bold block mb-1">GET /api/v1/registry</span>
+                    <p className="text-gray-500 text-[11px] mb-2">Estructura JSON cruda para auditorías externas.</p>
+                    <div className="bg-[#030712] p-2 rounded border border-gray-900 text-gray-400 text-[10px] overflow-x-auto">
+                      curl https://ve-emergency-map.vercel.app/api/v1/registry
+                    </div>
+                  </div>
+                  <div className="bg-gray-950 border border-gray-900 p-4 rounded-xl shadow-md">
+                    <span className="text-amber-400 font-bold block mb-1">GET /api/v1/registry/export</span>
+                    <p className="text-gray-500 text-[11px] mb-2">Descarga cruda CSV de contingencia local.</p>
+                    <div className="bg-[#030712] p-2 rounded border border-gray-900 text-gray-400 text-[10px] overflow-x-auto">
+                      curl https://ve-emergency-map.vercel.app/api/v1/registry/export
+                    </div>
+                  </div>
+                  <div className="bg-gray-950 border border-gray-900 p-4 rounded-xl shadow-md">
+                    <span className="text-blue-400 font-bold block mb-1">GET /api/v1/trends/normalized</span>
+                    <p className="text-gray-500 text-[11px] mb-2">Diccionario de hashtags de evasión algorítmica.</p>
+                    <div className="bg-[#030712] p-2 rounded border border-gray-900 text-gray-400 text-[10px] overflow-x-auto">
+                      curl https://ve-emergency-map.vercel.app/api/v1/trends/normalized
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-blue-950/10 border border-blue-900/30 p-4 rounded-xl mt-4 font-mono text-[11px]">
+                  <p className="text-blue-400/90 leading-relaxed">
+                    <strong>📌 Repositorio Soberano Abierto:</strong> El código fuente completo es auditable y libre. Revisa la arquitectura o clona el repositorio directamente en nuestro servidor de contingencia en <a href="https://github.com/sdfgames342-lgtm/sos-venezuela-portal" target="_blank" rel="noopener noreferrer" className="underline font-bold text-blue-400 hover:text-blue-300">GitHub</a>.
+                  </p>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          {/* Footer Profesional */}
+          <footer className="bg-[#070b12] border-t border-gray-900/60 p-6 text-center text-gray-500 space-y-4 font-mono text-xs">
+            <div className="max-w-5xl mx-auto text-[10px] text-gray-500/80 leading-relaxed border-b border-gray-950 pb-4">
+              <strong className="text-gray-400">AVISO LEGAL SOBERANO:</strong> Esta herramienta opera como un canal neutral descentralizado para el almacenamiento criptográfico de auditoría colectiva. La información aquí contenida depende estrictamente de las inserciones distribuidas de los usuarios. El equipo de desarrollo e infraestructura internacional no asume responsabilidad civil, penal o regulatoria por los enlaces o datos suministrados por terceros.
+            </div>
+            <div className="space-y-1">
+              <p className="font-bold text-gray-400 text-xs tracking-tight">
+                Proyecto Córdoba-Caracas · Desarrollado por Andalucia Projects 🇦🇷
+              </p>
+              <p className="text-[10px] text-gray-600">
+                © 2026 Andalucia Projects · Framework de desarrollo con fines educativos e impacto social humanitario. Licencias libres y código abierto.
+              </p>
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<PortalApp />);
+  </script>
+</body>
+</html>

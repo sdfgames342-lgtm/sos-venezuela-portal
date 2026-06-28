@@ -1,26 +1,35 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" class="scroll-smooth">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Normalizar – SOS Venezuela</title>
-  <link rel="stylesheet" href="/styles.css">
   <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/style.css" />
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="/app.js"></script>
 </head>
-<body class="bg-[#030712] text-gray-200">
+<body class="bg-[#030712] text-gray-200 font-sans antialiased selection:bg-red-500/30 selection:text-red-200">
   <div id="root"></div>
-
   <script type="text/babel">
-    const { useState, useEffect, useCallback } = React;
+    const { useState, useEffect } = React;
 
-    const supabaseClient = window.getSupabase();
-    const generateFingerprint = window.generateFingerprint;
-    const sanitizeText = window.sanitizeText;
+    const supabaseClient = supabase.createClient(
+      'https://pkajsigfbfwvyddpzhlo.supabase.co',
+      'sb_publishable_AfVuP-hufHWREFUS9Q7vzg_4gypxd9U'
+    );
+
+    function sanitizeText(text) {
+      let clean = text.replace(/\b(ba\s?){2,}/gi, '');
+      const insults = ['puto', 'marico', 'guevon', 'malparido', 'hdp', 'hijueputa'];
+      insults.forEach(word => {
+        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+        clean = clean.replace(regex, '[abuso detectado]');
+      });
+      return clean.trim();
+    }
 
     function NormalizarApp() {
       const [category, setCategory] = useState('listas');
@@ -28,9 +37,6 @@
       const [trendData, setTrendData] = useState(null);
       const [preview, setPreview] = useState('');
       const [error, setError] = useState('');
-      const [activeList, setActiveList] = useState(null);
-      const [fingerprint] = useState(generateFingerprint());
-      const [listFeedback, setListFeedback] = useState('');
 
       useEffect(() => {
         async function loadTrends() {
@@ -46,23 +52,7 @@
         return () => clearInterval(interval);
       }, []);
 
-      const loadActiveList = useCallback(async () => {
-        const { data, error } = await supabaseClient
-          .from('list_digitization_queue')
-          .select('*')
-          .eq('is_closed', false)
-          .order('uploaded_at', { ascending: true })
-          .limit(1)
-          .single();
-        if (!error && data) setActiveList(data);
-        else setActiveList(null);
-      }, []);
-
-      useEffect(() => {
-        loadActiveList();
-      }, [loadActiveList]);
-
-      const handleGenerate = async () => {
+      const handleGenerate = () => {
         const sanitized = sanitizeText(userText);
         if (sanitized.length < 80) {
           setError('El texto limpio (sin insultos o texto repetitivo) debe tener al menos 80 caracteres.');
@@ -71,12 +61,7 @@
         setError('');
 
         const hashtagMadre = '#VZN26';
-        const categoryMap = {
-          listas: 'ls',
-          donar: 'dn',
-          denuncia: 'dn_abuse',
-          proyectos: 'proyectos'
-        };
+        const categoryMap = { listas: 'ls', donar: 'dn', denuncia: 'dn_abuse', proyectos: 'proyectos' };
         const hijo = `#VZN26_${categoryMap[category] || category}`;
         const trendTag = trendData?.trend || '#WorldCup2026';
 
@@ -93,153 +78,79 @@
         const finalBlock = `${bodyText}\n\n${hashtagMadre} ${hijo} ${trendTag}`;
         setPreview(finalBlock);
 
-        try {
-          await navigator.clipboard.writeText(finalBlock);
-          alert('✅ Bloque copiado. Ahora pegalo en tus redes.');
-        } catch {
-          alert('⚠️ Copiá manualmente el texto desde la vista previa.');
-        }
-      };
-
-      const handleConfirmList = async () => {
-        if (!activeList) return;
-        const { error: insertError } = await supabaseClient
-          .from('list_confirmations')
-          .insert({ list_id: activeList.id, user_fingerprint: fingerprint });
-        if (insertError) {
-          setListFeedback('Ya confirmaste esta lista.');
-          return;
-        }
-        const newCount = (activeList.confirmation_count || 0) + 1;
-        const { error: updateError } = await supabaseClient
-          .from('list_digitization_queue')
-          .update({ confirmation_count: newCount, is_closed: newCount >= 5 })
-          .eq('id', activeList.id);
-        if (updateError) {
-          setListFeedback('Error al actualizar.');
-          return;
-        }
-        setListFeedback('¡Gracias por confirmar!');
-        loadActiveList();
-      };
-
-      const handleReportBroken = async () => {
-        if (!activeList) return;
-        const reports = (activeList.reports || 0) + 1;
-        const { error } = await supabaseClient
-          .from('list_digitization_queue')
-          .update({ reports, is_closed: reports >= 2 })
-          .eq('id', activeList.id);
-        if (!error) {
-          setListFeedback('Enlace reportado. Si llega a 2 reportes se cerrará.');
-          loadActiveList();
-        }
+        navigator.clipboard.writeText(finalBlock)
+          .then(() => alert('✅ Bloque copiado. Ahora pégalo en tus redes.'))
+          .catch(() => alert('⚠️ Copiá manualmente el texto desde la vista previa.'));
       };
 
       return (
-        <div className="min-h-screen flex flex-col justify-between bg-[#030712]">
+        <div className="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
           <div>
-            {/* Header idéntico a index */}
             <header className="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4">
               <nav className="flex justify-between items-center max-w-7xl mx-auto h-16">
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2">
-                    <span className="text-red-500 animate-pulse font-bold">●</span>
-                    <h1 className="text-md font-black tracking-wider text-white uppercase font-mono">
-                      SOS VEN - PORTAL
-                    </h1>
-                    <span className="text-[10px] text-gray-500 font-mono bg-gray-900 border border-gray-800 px-1.5 py-0.5 rounded">v1.2.0</span>
-                  </div>
-                  <span className="hidden md:inline text-[10px] text-red-400/80 font-mono tracking-tight mt-0.5">
-                    Infraestructura Soberana Anti-Censura · Proyecto Córdoba-Caracas
+                <div className="flex items-center gap-3">
+                  <span className="text-red-500 animate-pulse font-bold">●</span>
+                  <h1 className="text-md font-black tracking-wider text-white uppercase font-mono">SOS VEN - PORTAL</h1>
+                  <span className="text-[10px] text-gray-500 font-mono bg-gray-900 border border-gray-800 px-1.5 py-0.5 rounded flex items-center gap-1">
+                    v1.2.0
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block ml-1"></span>
+                    <span className="text-emerald-400 text-[8px] font-bold">NODO</span>
                   </span>
                 </div>
                 <div className="flex gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800/80 text-xs font-mono">
                   <a href="/" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Inicio</a>
                   <a href="/normalizar.html" className="bg-gray-900 text-white border border-gray-800 px-3 py-1.5 rounded-md transition-all shadow-sm">Normalizar</a>
                   <a href="/mapa.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Mapa</a>
+                  <a href="/devs.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Devs</a>
                 </div>
               </nav>
             </header>
 
-            <main className="max-w-3xl mx-auto p-6">
-              <div className="bg-[#090d16]/80 backdrop-blur-md p-6 rounded-xl border border-gray-800 shadow-xl mb-6">
-                <h2 className="text-2xl font-bold mb-2 font-mono">📢 Publicar sin censura</h2>
-                <p className="text-sm text-gray-400 mb-4 font-mono">Saneamiento automático, plantillas orgánicas y hashtags fragmentados.</p>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1 font-mono">Categoría</label>
-                  <select value={category} onChange={e => setCategory(e.target.value)} className="w-full p-2 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 focus:outline-none focus:border-red-500 transition-all">
-                    <option value="listas">Listas / Actas (#VZN26_ls)</option>
-                    <option value="donar">Donaciones (#VZN26_dn)</option>
-                    <option value="denuncia">Denuncias (#VZN26_dn_abuse)</option>
-                    <option value="proyectos">Proyectos (#VZN26_proyectos)</option>
-                  </select>
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1 font-mono">Tu descripción o enlace</label>
-                  <textarea
-                    value={userText}
-                    onChange={e => setUserText(e.target.value)}
-                    rows="4"
-                    className="w-full p-2 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-red-500 transition-all resize-none"
-                    placeholder="Escribí al menos 80 caracteres..."
-                  />
-                  <span className="text-xs text-gray-500 font-mono">{userText.trim().length}/80</span>
-                  {error && <p className="text-red-400 text-sm mt-1 font-mono">{error}</p>}
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-1 font-mono">Tendencia inyectada (Gemini)</label>
-                  <input type="text" value={trendData?.trend || 'Cargando...'} readOnly className="w-full p-2 bg-gray-950 border border-gray-800 rounded-lg text-gray-400 font-mono" />
-                </div>
-
-                <button
-                  onClick={handleGenerate}
-                  className="w-full bg-gradient-to-r from-yellow-600 to-yellow-500 hover:from-yellow-500 hover:to-yellow-400 text-black font-bold py-2.5 rounded-lg shadow-lg shadow-yellow-900/20 transition-all active:scale-[0.99]"
-                >
-                  Generar y copiar
-                </button>
-
-                {preview && (
-                  <div className="mt-6">
-                    <label className="block text-sm font-medium mb-2 font-mono">Vista previa generada:</label>
-                    <pre className="bg-gray-950 p-4 rounded-lg text-sm whitespace-pre-wrap font-mono border border-gray-800 text-gray-300">{preview}</pre>
-                  </div>
-                )}
-              </div>
-
+            <main className="p-4 md:p-6 max-w-3xl mx-auto">
               <div className="bg-[#090d16]/80 backdrop-blur-md p-6 rounded-xl border border-gray-800 shadow-xl">
-                <h2 className="text-2xl font-bold mb-4 font-mono">📋 Lista activa para digitalizar</h2>
-                {activeList ? (
+                <h2 className="text-xl font-bold text-white font-mono mb-4 flex items-center gap-2">
+                  <span className="text-blue-400">📢</span> Publicar sin censura
+                </h2>
+                <p className="text-xs text-gray-400 mb-6 leading-relaxed">Saneamiento automático, plantillas orgánicas y hashtags fragmentados.</p>
+
+                <div className="space-y-4 text-xs font-mono">
                   <div>
-                    <p className="text-sm mb-2">
-                      <a href={activeList.source_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline break-all">
-                        {activeList.source_url}
-                      </a>
-                    </p>
-                    <p className="text-xs text-gray-400 mb-4 font-mono">
-                      Confirmaciones: {activeList.confirmation_count}/5 &nbsp; | &nbsp; Subida: {new Date(activeList.uploaded_at).toLocaleString()}
-                    </p>
-                    <div className="flex gap-3">
-                      <button onClick={handleConfirmList} className="bg-green-600 hover:bg-green-700 py-1.5 px-4 rounded text-sm font-medium transition-all">
-                        ✅ Confirmar lista
-                      </button>
-                      <button onClick={handleReportBroken} className="bg-red-600 hover:bg-red-700 py-1.5 px-4 rounded text-sm font-medium transition-all">
-                        🚫 Reportar enlace roto
-                      </button>
-                    </div>
-                    {listFeedback && <p className="mt-2 text-sm text-yellow-300 font-mono">{listFeedback}</p>}
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Categoría</label>
+                    <select value={category} onChange={e => setCategory(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all">
+                      <option value="listas">Listas / Actas (#VZN26_ls)</option>
+                      <option value="donar">Donaciones (#VZN26_dn)</option>
+                      <option value="denuncia">Denuncias (#VZN26_dn_abuse)</option>
+                      <option value="proyectos">Proyectos (#VZN26_proyectos)</option>
+                    </select>
                   </div>
-                ) : (
-                  <p className="text-gray-400 font-mono">No hay listas pendientes. ¡Sé el primero en subir una!</p>
-                )}
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tu descripción o enlace</label>
+                    <textarea value={userText} onChange={e => setUserText(e.target.value)} rows="4" className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-blue-500 transition-all resize-none" placeholder="Escribí al menos 80 caracteres..." />
+                    <span className="text-[10px] text-gray-500">{userText.trim().length}/80</span>
+                    {error && <p className="text-red-400 text-[11px] mt-1">{error}</p>}
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tendencia inyectada (Gemini)</label>
+                    <input type="text" value={trendData?.trend || 'Cargando...'} readOnly className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-400" />
+                  </div>
+
+                  <button onClick={handleGenerate} className="w-full bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white py-2.5 rounded-lg font-bold uppercase tracking-wider shadow-lg shadow-blue-900/20 active:scale-[0.99] transition-all">
+                    Generar y copiar
+                  </button>
+
+                  {preview && (
+                    <div className="mt-4">
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Vista previa generada:</label>
+                      <pre className="bg-[#030712] p-3 rounded-lg border border-gray-800 text-gray-300 text-[11px] whitespace-pre-wrap font-mono">{preview}</pre>
+                    </div>
+                  )}
+                </div>
               </div>
             </main>
           </div>
 
-          {/* Footer igual que index */}
           <footer className="bg-[#070b12] border-t border-gray-900/60 p-6 text-center text-gray-500 space-y-4 font-mono text-xs">
             <div className="max-w-5xl mx-auto text-[10px] text-gray-500/80 leading-relaxed border-b border-gray-950 pb-4">
               <strong className="text-gray-400">AVISO LEGAL SOBERANO:</strong> Esta herramienta opera como un canal neutral descentralizado para el almacenamiento criptográfico de auditoría colectiva. La información aquí contenida depende estrictamente de las inserciones distribuidas de los usuarios. El equipo de desarrollo e infraestructura internacional no asume responsabilidad civil, penal o regulatoria por los enlaces o datos suministrados por terceros.

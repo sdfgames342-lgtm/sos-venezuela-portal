@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Denuncias – SOS Venezuela</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/css/style.css" />
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body class="bg-[#030712] text-gray-200 font-sans antialiased selection:bg-red-500/30 selection:text-red-200">
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState } = React;
+
+    const supabaseClient = supabase.createClient(
+      'https://pkajsigfbfwvyddpzhlo.supabase.co',
+      'sb_publishable_AfVuP-hufHWREFUS9Q7vzg_4gypxd9U'
+    );
+
+    function DenunciasApp() {
+      const [title, setTitle] = useState('');
+      const [sourceUrl, setSourceUrl] = useState('');
+      const [evidenceUrl, setEvidenceUrl] = useState('');
+      const [desc, setDesc] = useState('');
+      const [type, setType] = useState('estafa');
+      const [feedback, setFeedback] = useState('');
+      const [lat, setLat] = useState('');
+      const [lng, setLng] = useState('');
+      const [locationLoading, setLocationLoading] = useState(false);
+
+      const getLocation = () => {
+        if (!navigator.geolocation) {
+          alert('Tu navegador no soporta geolocalización.');
+          return;
+        }
+        setLocationLoading(true);
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setLat(pos.coords.latitude.toString());
+            setLng(pos.coords.longitude.toString());
+            setLocationLoading(false);
+          },
+          (err) => {
+            alert('No se pudo obtener la ubicación: ' + err.message);
+            setLocationLoading(false);
+          }
+        );
+      };
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!title || !sourceUrl) {
+          setFeedback('⚠️ Título y Enlace de origen son obligatorios.');
+          return;
+        }
+
+        const payload = {
+          title,
+          source_url: sourceUrl,
+          evidence_url: evidenceUrl,
+          description: desc,
+          category: type,
+          lat: lat ? parseFloat(lat) : null,
+          lng: lng ? parseFloat(lng) : null
+        };
+
+        const { error } = await supabaseClient
+          .from('crowdfunding_registry')
+          .insert(payload);
+
+        if (error) {
+          if (error.code === '23505') {
+            setFeedback('⚠️ Este enlace ya existe en el repositorio.');
+          } else {
+            setFeedback('⚠️ Error al registrar: ' + error.message);
+          }
+        } else {
+          setFeedback('✅ Registro exitoso. Tu reporte ha sido indexado.');
+          setTitle(''); setSourceUrl(''); setEvidenceUrl(''); setDesc('');
+          setLat(''); setLng('');
+        }
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
+          <div>
+            <header className="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4">
+              <nav className="flex justify-between items-center max-w-7xl mx-auto h-16">
+                <div className="flex items-center gap-3">
+                  <span className="text-red-500 animate-pulse font-bold">●</span>
+                  <h1 className="text-md font-black tracking-wider text-white uppercase font-mono">SOS VEN - PORTAL</h1>
+                  <span className="text-[10px] text-gray-500 font-mono bg-gray-900 border border-gray-800 px-1.5 py-0.5 rounded flex items-center gap-1">
+                    v1.2.0
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block ml-1"></span>
+                    <span className="text-emerald-400 text-[8px] font-bold">NODO</span>
+                  </span>
+                </div>
+                <div className="flex gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800/80 text-xs font-mono">
+                  <a href="/" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Inicio</a>
+                  <a href="/normalizar.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Normalizar</a>
+                  <a href="/mapa.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Mapa</a>
+                  <a href="/devs.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Devs</a>
+                </div>
+              </nav>
+            </header>
+
+            <main className="p-4 md:p-6 max-w-3xl mx-auto">
+              <div className="bg-[#090d16]/80 backdrop-blur-md p-6 rounded-xl border border-gray-800 shadow-xl">
+                <h2 className="text-xl font-bold text-white font-mono mb-4 flex items-center gap-2">
+                  <span className="text-red-500">📥</span> Reportar Caso o Campaña
+                </h2>
+                <p className="text-xs text-gray-400 mb-6 leading-relaxed font-mono">
+                  Tu reporte será procesado de forma anónima (Zero-Knowledge) para alimentar el feed comunitario de auditoría.
+                </p>
+
+                <form onSubmit={handleSubmit} className="space-y-4 text-xs font-mono">
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Categoría Operativa</label>
+                    <select value={type} onChange={e => setType(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-500/30 transition-all">
+                      <option value="estafa">🚨 Alerta: Campaña Falsa / Estafa</option>
+                      <option value="veridico">✅ Campañas de Recaudación Real</option>
+                      <option value="abuso">⚠️ Abuso de Autoridad (Militar/Policial)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Identificador / Implicado</label>
+                    <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-red-500 transition-all" placeholder="Ej: @cuenta_recaudadora / Destacamento X" />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">URL Origen / Perfil Evaluado</label>
+                    <input type="url" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-red-500 transition-all" placeholder="https://instagram.com/perfil..." />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Enlace a Constancia de Pruebas</label>
+                    <input type="url" value={evidenceUrl} onChange={e => setEvidenceUrl(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-red-500 transition-all" placeholder="https://t.me/canal_pruebas/..." />
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Sustento Forense o Descripción</label>
+                    <textarea value={desc} onChange={e => setDesc(e.target.value)} rows="3" className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-red-500 transition-all resize-none" placeholder="Provea detalles precisos e incongruencias detectadas..." />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 bg-gray-950 p-2 rounded-lg border border-gray-900">
+                    <div>
+                      <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">Latitud</label>
+                      <input type="text" value={lat} onChange={e => setLat(e.target.value)} className="w-full p-1.5 bg-gray-900 border border-gray-800 rounded text-gray-300 placeholder-gray-700 text-center focus:outline-none" placeholder="-12.04" />
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-bold text-gray-500 uppercase tracking-wider mb-1">Longitud</label>
+                      <input type="text" value={lng} onChange={e => setLng(e.target.value)} className="w-full p-1.5 bg-gray-900 border border-gray-800 rounded text-gray-300 placeholder-gray-700 text-center focus:outline-none" placeholder="-77.04" />
+                    </div>
+                    <button type="button" onClick={getLocation} disabled={locationLoading} className="col-span-2 mt-1.5 w-full bg-blue-950/60 hover:bg-blue-900 border border-blue-800/40 text-blue-400 py-1 rounded text-[10px] font-bold transition-all disabled:opacity-50">
+                      {locationLoading ? 'Buscando Satélites...' : '📍 Capturar Geo-Ubicación'}
+                    </button>
+                  </div>
+
+                  <button type="submit" className="w-full bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white py-2.5 rounded-lg font-bold uppercase tracking-wider shadow-lg shadow-red-900/20 active:scale-[0.99] transition-all">
+                    Inyectar al Repositorio
+                  </button>
+
+                  {feedback && (
+                    <div className="p-2.5 rounded-lg bg-gray-950 border border-gray-800 text-center font-medium text-yellow-400 text-[11px] animate-fade-in">
+                      {feedback}
+                    </div>
+                  )}
+                </form>
+              </div>
+            </main>
+          </div>
+
+          <footer className="bg-[#070b12] border-t border-gray-900/60 p-6 text-center text-gray-500 space-y-4 font-mono text-xs">
+            <div className="max-w-5xl mx-auto text-[10px] text-gray-500/80 leading-relaxed border-b border-gray-950 pb-4">
+              <strong className="text-gray-400">AVISO LEGAL SOBERANO:</strong> Esta herramienta opera como un canal neutral descentralizado para el almacenamiento criptográfico de auditoría colectiva. La información aquí contenida depende estrictamente de las inserciones distribuidas de los usuarios. El equipo de desarrollo e infraestructura internacional no asume responsabilidad civil, penal o regulatoria por los enlaces o datos suministrados por terceros.
+            </div>
+            <div className="space-y-1">
+              <p className="font-bold text-gray-400 text-xs tracking-tight">
+                Proyecto Córdoba-Caracas · Desarrollado por Andalucia Projects 🇦🇷
+              </p>
+              <p className="text-[10px] text-gray-600">
+                © 2026 Andalucia Projects · Framework de desarrollo con fines educativos e impacto social humanitario. Licencias libres y código abierto.
+              </p>
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<DenunciasApp />);
+  </script>
+</body>
+</html>

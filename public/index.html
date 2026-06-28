@@ -1,17 +1,11 @@
 <!DOCTYPE html>
 <html lang="es" class="scroll-smooth">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SOS Venezuela – Repositorio Ciudadano</title>
-
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-
-  <!-- Estilos personalizados -->
-  <link rel="stylesheet" href="/css/style.css">
-
-  <!-- React, Babel y Supabase -->
+  <link rel="stylesheet" href="/css/style.css" />
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -19,8 +13,244 @@
 </head>
 <body class="bg-[#030712] text-gray-200 font-sans antialiased selection:bg-red-500/30 selection:text-red-200">
   <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
 
-  <!-- Aplicación React -->
-  <script type="text/babel" src="/js/app.js"></script>
+    const supabaseClient = supabase.createClient(
+      'https://pkajsigfbfwvyddpzhlo.supabase.co',
+      'sb_publishable_AfVuP-hufHWREFUS9Q7vzg_4gypxd9U'
+    );
+
+    function generateFingerprint() {
+      const str = navigator.userAgent + screen.width + screen.height;
+      return btoa(str).substring(0, 32);
+    }
+
+    function PortalApp() {
+      const [fingerprint] = useState(generateFingerprint());
+      const [campaigns, setCampaigns] = useState([]);
+
+      const loadRepository = useCallback(async () => {
+        const { data, error } = await supabaseClient
+          .from('crowdfunding_registry')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && data) setCampaigns(data);
+      }, []);
+
+      useEffect(() => {
+        loadRepository();
+      }, [loadRepository]);
+
+      const handleVote = async (campaignId, delta) => {
+        const { error: voteError } = await supabaseClient
+          .from('campaign_votes')
+          .insert({ campaign_id: campaignId, user_fingerprint: fingerprint, vote_type: delta });
+
+        if (voteError) {
+          alert('Tu dispositivo ya emitió un voto para este registro.');
+          return;
+        }
+
+        const campaign = campaigns.find(c => c.id === campaignId);
+        const newScore = (campaign.trust_score || 0) + delta;
+
+        await supabaseClient
+          .from('crowdfunding_registry')
+          .update({ trust_score: newScore })
+          .eq('id', campaignId);
+
+        loadRepository();
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
+          <div>
+            <header className="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4">
+              <nav className="flex justify-between items-center max-w-7xl mx-auto h-16">
+                <div className="flex items-center gap-3">
+                  <span className="text-red-500 animate-pulse font-bold">●</span>
+                  <h1 className="text-md font-black tracking-wider text-white uppercase font-mono">
+                    SOS VEN - PORTAL
+                  </h1>
+                  <span className="text-[10px] text-gray-500 font-mono bg-gray-900 border border-gray-800 px-1.5 py-0.5 rounded flex items-center gap-1">
+                    v1.2.0
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block ml-1"></span>
+                    <span className="text-emerald-400 text-[8px] font-bold">NODO</span>
+                  </span>
+                </div>
+                <div className="flex gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800/80 text-xs font-mono">
+                  <a href="/" className="bg-gray-900 text-white border border-gray-800 px-3 py-1.5 rounded-md transition-all shadow-sm">Inicio</a>
+                  <a href="/normalizar.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Normalizar</a>
+                  <a href="/mapa.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Mapa</a>
+                  <a href="/devs.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Devs</a>
+                </div>
+              </nav>
+            </header>
+
+            <section className="bg-gradient-to-b from-[#090d16] to-transparent py-10 px-4 border-b border-gray-900/60">
+              <div className="max-w-7xl mx-auto">
+                <div className="max-w-3xl mb-8">
+                  <h2 className="text-3xl md:text-4xl font-black text-white mb-3 tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-gray-200 to-gray-400">
+                    Contraloría e Inteligencia Ciudadana Decentralizada
+                  </h2>
+                  <p className="text-sm text-gray-400 leading-relaxed font-mono">
+                    Protección bajo arquitectura Zero-Knowledge fuera de la jurisdicción de censura local. Mapeamos incidentes, filtramos estafas en tiempo real y normalizamos el flujo de datos.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                  <a href="#repositorio" className="group card p-4 rounded-xl border border-emerald-500/10 hover:border-emerald-500/30 transition-all bg-gradient-to-b from-transparent to-emerald-950/5 flex flex-col justify-between h-32 shadow-lg shadow-black/40">
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-emerald-400">Match Seguro</h3>
+                        <span className="text-lg group-hover:scale-110 transition-transform">💰</span>
+                      </div>
+                      <p className="text-[11px] text-gray-400">Filtrado y validación colectiva de cuentas de recaudación.</p>
+                    </div>
+                    <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1 group-hover:underline">Explorar Padrón ↓</span>
+                  </a>
+
+                  <a href="/normalizar.html" className="group card p-4 rounded-xl border border-blue-500/10 hover:border-blue-500/30 transition-all bg-gradient-to-b from-transparent to-blue-950/5 flex flex-col justify-between h-32 shadow-lg shadow-black/40">
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-blue-400">Normalizar</h3>
+                        <span className="text-lg group-hover:scale-110 transition-transform">📊</span>
+                      </div>
+                      <p className="text-[11px] text-gray-400">Estructuración de hashtags para evadir bloqueos algorítmicos.</p>
+                    </div>
+                    <span className="text-[10px] text-blue-400 font-mono flex items-center gap-1 group-hover:underline">Estructurar Redes →</span>
+                  </a>
+
+                  <a href="/denuncias.html" className="group card p-4 rounded-xl border border-red-500/10 hover:border-red-500/30 transition-all bg-gradient-to-b from-transparent to-red-950/5 flex flex-col justify-between h-32 shadow-lg shadow-black/40">
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-red-400">Denuncias</h3>
+                        <span className="text-lg group-hover:scale-110 transition-transform">🕵️‍♂️</span>
+                      </div>
+                      <p className="text-[11px] text-gray-400">Canal forense para abusos de autoridad sin rastro digital.</p>
+                    </div>
+                    <span className="text-[10px] text-red-400 font-mono flex items-center gap-1 group-hover:underline">Reportar Alerta ↓</span>
+                  </a>
+
+                  <a href="/mapa.html" className="group card p-4 rounded-xl border border-cyan-500/10 hover:border-cyan-500/30 transition-all bg-gradient-to-b from-transparent to-cyan-950/5 flex flex-col justify-between h-32 shadow-lg shadow-black/40">
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-cyan-400">Mapa</h3>
+                        <span className="text-lg group-hover:scale-110 transition-transform">🗺️</span>
+                      </div>
+                      <p className="text-[11px] text-gray-400">Visualización geoespacial de incidentes y focos de calor.</p>
+                    </div>
+                    <span className="text-[10px] text-cyan-400 font-mono flex items-center gap-1 group-hover:underline">Explorar →</span>
+                  </a>
+
+                  <a href="/devs.html" className="group card p-4 rounded-xl border border-gray-500/10 hover:border-gray-500/30 transition-all bg-gradient-to-b from-transparent to-gray-950/5 flex flex-col justify-between h-32 shadow-lg shadow-black/40">
+                    <div>
+                      <div className="flex justify-between items-center mb-1">
+                        <h3 className="text-xs font-bold font-mono uppercase tracking-wider text-gray-400">Devs</h3>
+                        <span className="text-lg group-hover:scale-110 transition-transform">⚡</span>
+                      </div>
+                      <p className="text-[11px] text-gray-400">Acceso a API pública, documentación y repositorio.</p>
+                    </div>
+                    <span className="text-[10px] text-gray-400 font-mono flex items-center gap-1 group-hover:underline">Ir a Consola →</span>
+                  </a>
+                </div>
+              </div>
+            </section>
+
+            <main id="repositorio" className="p-4 md:p-6 max-w-7xl mx-auto">
+              <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-[#090d16]/30 p-4 rounded-xl border border-gray-900 mb-4">
+                <div>
+                  <h2 className="text-lg font-bold text-white font-mono tracking-tight flex items-center gap-2">
+                    <span>📂</span> Historial de Auditoría Ciudadana
+                  </h2>
+                  <p className="text-xs text-gray-400 font-mono">Validación criptográfica en base a reputación colectiva de red.</p>
+                </div>
+                <div className="bg-blue-950/20 border border-blue-900/40 p-2.5 rounded-lg text-[11px] max-w-xs font-mono">
+                  <p className="text-blue-400/90">
+                    <strong>💻 Core Abierto:</strong> Cooperación civil sin fines de lucro en <a href="mailto:andalucia.terrabyte@gmail.com" className="underline font-bold text-blue-400">andalucia.terrabyte@gmail.com</a>
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {campaigns.length === 0 ? (
+                  <div className="text-center font-mono bg-[#090d16]/20 border border-gray-900 p-12 rounded-xl text-gray-600 text-xs">
+                    [ REPOSITORIO DE CONTINGENCIA VACÍO — ESPERANDO ENLACES COMUNITARIOS ]
+                  </div>
+                ) : (
+                  campaigns.map(c => (
+                    <div key={c.id} className={`p-4 rounded-xl border bg-[#090d16]/60 backdrop-blur-sm transition-all shadow-md flex flex-col md:flex-row justify-between gap-4 ${
+                      c.category === 'estafa' ? 'border-red-950/40 hover:border-red-900/40' :
+                      c.category === 'abuso' ? 'border-purple-950/40 hover:border-purple-900/40' :
+                      'border-emerald-950/40 hover:border-emerald-900/40'
+                    }`}>
+                      <div className="flex-1 space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold tracking-wider uppercase border font-mono ${
+                            c.category === 'estafa' ? 'bg-red-950/50 text-red-400 border-red-900/30' :
+                            c.category === 'abuso' ? 'bg-purple-950/50 text-purple-400 border-purple-900/30' :
+                            'bg-emerald-950/50 text-emerald-400 border-emerald-900/30'
+                          }`}>
+                            {c.category === 'estafa' ? '🚨 Reporte: Fraude / Estafa' : c.category === 'abuso' ? '⚠️ Alerta Abuso' : '✅ Cuenta Verificada'}
+                          </span>
+                          {c.lat && c.lng && (
+                            <span className="text-[10px] text-gray-500 font-mono bg-gray-950 border border-gray-900 px-1.5 py-0.5 rounded">
+                              📍 {parseFloat(c.lat).toFixed(4)}, {parseFloat(c.lng).toFixed(4)}
+                            </span>
+                          )}
+                        </div>
+                        <h3 className="text-base font-bold text-white tracking-tight">{c.title}</h3>
+                        <p className="text-xs text-gray-400 leading-relaxed bg-black/40 p-3 rounded-lg border border-gray-950 font-mono">
+                          {c.description}
+                        </p>
+                        <div className="flex flex-wrap gap-4 text-[11px] font-mono pt-1">
+                          <a href={c.source_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 font-semibold underline decoration-blue-500/30">
+                            🔗 Enlace Incriminado / Post
+                          </a>
+                          {c.evidence_url && (
+                            <a href={c.evidence_url} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 font-semibold underline decoration-amber-500/30">
+                              📄 Enlace de Respaldo Forense
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex md:flex-col justify-between items-center bg-gray-950/80 p-2.5 rounded-xl border border-gray-800/80 min-w-[100px] h-fit md:h-24 shadow-inner font-mono">
+                        <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Confianza</span>
+                        <span className={`text-base font-black tracking-tighter ${c.trust_score >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                          {c.trust_score >= 0 ? `+${c.trust_score}` : c.trust_score}
+                        </span>
+                        <div className="flex gap-2 border-t md:border-t-0 border-gray-900 pt-1 md:pt-0">
+                          <button onClick={() => handleVote(c.id, 1)} className="bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-900/40 text-emerald-400 w-6 h-6 flex items-center justify-center rounded transition-all font-bold text-xs">▲</button>
+                          <button onClick={() => handleVote(c.id, -1)} className="bg-red-950/40 hover:bg-red-900/60 border border-red-900/40 text-red-400 w-6 h-6 flex items-center justify-center rounded transition-all font-bold text-xs">▼</button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </main>
+          </div>
+
+          <footer className="bg-[#070b12] border-t border-gray-900/60 p-6 text-center text-gray-500 space-y-4 font-mono text-xs">
+            <div className="max-w-5xl mx-auto text-[10px] text-gray-500/80 leading-relaxed border-b border-gray-950 pb-4">
+              <strong className="text-gray-400">AVISO LEGAL SOBERANO:</strong> Esta herramienta opera como un canal neutral descentralizado para el almacenamiento criptográfico de auditoría colectiva. La información aquí contenida depende estrictamente de las inserciones distribuidas de los usuarios. El equipo de desarrollo e infraestructura internacional no asume responsabilidad civil, penal o regulatoria por los enlaces o datos suministrados por terceros.
+            </div>
+            <div className="space-y-1">
+              <p className="font-bold text-gray-400 text-xs tracking-tight">
+                Proyecto Córdoba-Caracas · Desarrollado por Andalucia Projects 🇦🇷
+              </p>
+              <p className="text-[10px] text-gray-600">
+                © 2026 Andalucia Projects · Framework de desarrollo con fines educativos e impacto social humanitario. Licencias libres y código abierto.
+              </p>
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<PortalApp />);
+  </script>
 </body>
 </html>
