@@ -4,11 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SOS Venezuela – Repositorio Ciudadano</title>
+  <link rel="stylesheet" href="/styles.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/app.js"></script>
+  <style>
+    /* Estilos adicionales específicos de esta página si es necesario */
+  </style>
 </head>
 <body class="bg-[#030712] text-gray-200 font-sans antialiased selection:bg-red-500/30 selection:text-red-200">
   <div id="root"></div>
@@ -16,15 +21,9 @@
   <script type="text/babel">
     const { useState, useEffect, useCallback } = React;
 
-    const supabaseClient = supabase.createClient(
-      'https://pkajsigfbfwvyddpzhlo.supabase.co',
-      'sb_publishable_AfVuP-hufHWREFUS9Q7vzg_4gypxd9U'
-    );
-
-    function generateFingerprint() {
-      const str = navigator.userAgent + screen.width + screen.height;
-      return btoa(str).substring(0, 32);
-    }
+    // Usar funciones globales
+    const supabaseClient = window.getSupabase();
+    const generateFingerprint = window.generateFingerprint;
 
     function PortalApp() {
       const [fingerprint] = useState(generateFingerprint());
@@ -131,7 +130,7 @@
       return (
         <div className="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
           <div>
-            {/* Header Rediseñado */}
+            {/* Header Rediseñado (igual para todas) */}
             <header className="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4">
               <nav className="flex justify-between items-center max-w-7xl mx-auto h-16">
                 <div className="flex flex-col">
@@ -154,7 +153,7 @@
               </nav>
             </header>
 
-            {/* Hero / Dashboard Corporativo */}
+            {/* Hero / Dashboard (igual que antes) */}
             <section className="bg-gradient-to-b from-[#090d16] to-transparent py-10 px-4 border-b border-gray-900/60">
               <div className="max-w-7xl mx-auto">
                 <div className="max-w-3xl mb-8">
@@ -236,7 +235,7 @@
 
             {/* Grid Principal */}
             <main id="repositorio" className="p-4 md:p-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
-              
+
               {/* Columna Izquierda: Formulario Quirúrgico */}
               <div className="lg:col-span-4 space-y-4">
                 <div className="bg-[#090d16]/80 backdrop-blur-md p-5 rounded-xl border border-gray-800 shadow-xl relative">
@@ -244,7 +243,7 @@
                     <span className="text-red-500">📥</span>
                     <h2 className="text-sm font-bold uppercase tracking-wider text-white font-mono">Indexar Reporte Forzado</h2>
                   </div>
-                  
+
                   <form onSubmit={handleSubmit} className="space-y-4 mt-4 text-xs font-mono">
                     <div>
                       <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Categoría Operativa</label>
@@ -292,7 +291,7 @@
                     <button type="submit" className="w-full bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white py-2.5 rounded-lg font-bold uppercase tracking-wider shadow-lg shadow-red-900/20 active:scale-[0.99] transition-all">
                       Inyectar al Repositorio
                     </button>
-                    
+
                     {feedback && (
                       <div className="p-2.5 rounded-lg bg-gray-950 border border-gray-800 text-center font-medium text-yellow-400 text-[11px] animate-fade-in">
                         {feedback}
@@ -338,15 +337,15 @@
                   ) : (
                     campaigns.map(c => (
                       <div key={c.id} className={`p-4 rounded-xl border bg-[#090d16]/60 backdrop-blur-sm transition-all shadow-md flex flex-col md:flex-row justify-between gap-4 ${
-                        c.category === 'estafa' ? 'border-red-950/40 hover:border-red-900/40' : 
-                        c.category === 'abuso' ? 'border-purple-950/40 hover:border-purple-900/40' : 
+                        c.category === 'estafa' ? 'border-red-950/40 hover:border-red-900/40' :
+                        c.category === 'abuso' ? 'border-purple-950/40 hover:border-purple-900/40' :
                         'border-emerald-950/40 hover:border-emerald-900/40'
                       }`}>
                         <div className="flex-1 space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold tracking-wider uppercase border font-mono ${
-                              c.category === 'estafa' ? 'bg-red-950/50 text-red-400 border-red-900/30' : 
-                              c.category === 'abuso' ? 'bg-purple-950/50 text-purple-400 border-purple-900/30' : 
+                              c.category === 'estafa' ? 'bg-red-950/50 text-red-400 border-red-900/30' :
+                              c.category === 'abuso' ? 'bg-purple-950/50 text-purple-400 border-purple-900/30' :
                               'bg-emerald-950/50 text-emerald-400 border-emerald-900/30'
                             }`}>
                               {c.category === 'estafa' ? '🚨 Reporte: Fraude / Estafa' : c.category === 'abuso' ? '⚠️ Alerta Abuso' : '✅ Cuenta Verificada'}
@@ -357,9 +356,9 @@
                               </span>
                             )}
                           </div>
-                          
+
                           <h3 className="text-base font-bold text-white tracking-tight">{c.title}</h3>
-                          
+
                           <p className="text-xs text-gray-400 leading-relaxed bg-black/40 p-3 rounded-lg border border-gray-950 font-mono">
                             {c.description}
                           </p>
@@ -424,7 +423,7 @@
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-blue-950/10 border border-blue-900/30 p-4 rounded-xl mt-4 font-mono text-[11px]">
                   <p className="text-blue-400/90 leading-relaxed">
                     <strong>📌 Repositorio Soberano Abierto:</strong> El código fuente completo es auditable y libre. Revisa la arquitectura o clona el repositorio directamente en nuestro servidor de contingencia en <a href="https://github.com/sdfgames342-lgtm/sos-venezuela-portal" target="_blank" rel="noopener noreferrer" className="underline font-bold text-blue-400 hover:text-blue-300">GitHub</a>.

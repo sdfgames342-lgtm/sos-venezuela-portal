@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>Mapa – SOS Venezuela 2026</title>
+  <link rel="stylesheet" href="/styles.css">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
@@ -13,24 +14,38 @@
     .stats-box { background: rgba(0,0,0,0.7); padding: 6px; border-radius: 4px; }
   </style>
 </head>
-<body class="bg-gray-900 text-white">
-  <header class="p-3 bg-red-700 shadow-lg">
-    <nav class="flex justify-between items-center">
-      <h1 class="text-xl font-bold">Venezuela Sismo 2026</h1>
-      <div class="flex gap-4 text-sm">
-        <a href="/" class="hover:underline">Inicio</a>
-        <a href="/mapa.html" class="hover:underline">Mapa</a>
-        <a href="/normalizar.html" class="hover:underline">Normalizar</a>
+<body class="bg-[#030712] text-gray-200">
+
+  <!-- Header unificado -->
+  <header class="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4">
+    <nav class="flex justify-between items-center max-w-7xl mx-auto h-16">
+      <div class="flex flex-col">
+        <div class="flex items-center gap-2">
+          <span class="text-red-500 animate-pulse font-bold">●</span>
+          <h1 class="text-md font-black tracking-wider text-white uppercase font-mono">
+            SOS VEN - MAPA
+          </h1>
+          <span class="text-[10px] text-gray-500 font-mono bg-gray-900 border border-gray-800 px-1.5 py-0.5 rounded">v1.2.0</span>
+        </div>
+        <span class="hidden md:inline text-[10px] text-red-400/80 font-mono tracking-tight mt-0.5">
+          Infraestructura Soberana Anti-Censura · Proyecto Córdoba-Caracas
+        </span>
+      </div>
+      <div class="flex gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800/80 text-xs font-mono">
+        <a href="/" class="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Inicio</a>
+        <a href="/normalizar.html" class="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Normalizar</a>
+        <a href="/mapa.html" class="bg-gray-900 text-white border border-gray-800 px-3 py-1.5 rounded-md transition-all shadow-sm">Mapa</a>
       </div>
     </nav>
-    <div id="stats" class="stats-box text-xs mt-2 inline-block">
-      Cargando estadísticas…
-    </div>
   </header>
 
-  <div id="map" class="w-full h-[calc(100vh-110px)]"></div>
+  <div id="stats" class="stats-box text-xs mt-2 inline-block mx-4">
+    Cargando estadísticas…
+  </div>
 
-  <div class="absolute top-28 right-3 z-[1000] flex flex-col gap-1">
+  <div id="map" class="w-full h-[calc(100vh-150px)]"></div>
+
+  <div class="absolute top-24 right-3 z-[1000] flex flex-col gap-1">
     <button onclick="filterLayer('instalacion_peligrosa')" class="layer-btn bg-yellow-600">☢ Peligrosas</button>
     <button onclick="filterLayer('incendio')" class="layer-btn bg-red-600">🔥 Incendios</button>
     <button onclick="filterLayer('contaminacion')" class="layer-btn bg-green-600">🌫 Aire</button>
@@ -91,5 +106,10 @@
         })()}`;
     }
   </script>
+
+  <!-- Footer -->
+  <footer class="bg-[#070b12] border-t border-gray-900/60 p-4 text-center text-gray-500 font-mono text-[10px]">
+    <p>Proyecto Córdoba-Caracas · Andalucia Projects 🇦🇷</p>
+  </footer>
 </body>
 </html>
