@@ -1,0 +1,74 @@
+/* ============================================
+   Estilos globales - SOS Venezuela
+   ============================================ */
+
+/* Reset y tipografía */
+body {
+  background: #030712;
+  color: #e5e7eb;
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  scroll-behavior: smooth;
+}
+
+/* Scroll personalizado */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0b1120;
+}
+::-webkit-scrollbar-thumb {
+  background: #1f2937;
+  border-radius: 6px;
+}
+
+/* Gradiente radial de fondo */
+.bg-radial {
+  background: radial-gradient(ellipse at 50% 0%, #111827 0%, #030712 70%);
+}
+
+/* Animación fade-in */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+/* Tarjetas con efecto glassmorphism */
+.card {
+  background: rgba(9, 13, 22, 0.6);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(31, 41, 55, 0.5);
+  transition: all 0.2s ease;
+}
+.card:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+}
+
+/* Botones y elementos de formulario */
+input, select, textarea {
+  background: #0b1120;
+  border: 1px solid #1f2937;
+  color: #e5e7eb;
+  transition: border-color 0.2s;
+}
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #ef4444;
+  box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.3);
+}
+
+/* Utilidades para textos */
+.font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+}
