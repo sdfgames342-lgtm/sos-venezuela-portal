@@ -99,12 +99,19 @@
       return (
         <div className="min-h-screen flex flex-col justify-between">
           <div>
-            {/* HEADER LIMPIO Y PROFESIONAL */}
+            {/* HEADER CON NUEVO SUBTÍTULO */}
             <header className="p-4 bg-gray-900 border-b border-gray-800 shadow-sm">
               <nav className="flex justify-between items-center max-w-6xl mx-auto">
-                <div className="flex items-center gap-2">
-                  <span className="text-xl">🛡️</span>
-                  <h1 className="text-lg font-bold tracking-tight text-white">SOS Venezuela <span className="text-xs text-red-500 bg-red-950/40 px-2 py-0.5 rounded ml-1 border border-red-900/50">Portal Ciudadano</span></h1>
+                <div className="flex flex-col md:flex-row md:items-center gap-1 md:gap-3">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🛡️</span>
+                    <h1 className="text-lg font-black tracking-tight text-white uppercase">
+                      SOS Venezuela
+                    </h1>
+                  </div>
+                  <span className="text-xs text-red-400 font-semibold bg-red-950/40 px-2 py-0.5 rounded border border-red-900/40 w-fit">
+                    Canal de Validación Financiera y Datos · Proyecto Córdoba-Caracas
+                  </span>
                 </div>
                 <div className="flex gap-4 text-sm font-medium">
                   <a href="/" className="text-red-400 hover:text-red-300 transition-colors">Inicio</a>
@@ -114,52 +121,54 @@
               </nav>
             </header>
 
-            {/* SECCIÓN DE BIENVENIDA: RESPUESTA HUMANITARIA EN 3 SEGUNDOS */}
+            {/* SECCIÓN DE BIENVENIDA CON NUEVAS TARJETAS */}
             <section className="bg-gray-900 py-8 px-4 border-b border-gray-800">
               <div className="max-w-6xl mx-auto text-center md:text-left">
-                <h2 className="text-3xl font-extrabold text-white mb-2 tracking-tight">Repositorio de Respuesta Rápida Ciudadana</h2>
+                <h2 className="text-3xl font-extrabold text-white mb-2 tracking-tight">Plataforma de Contraloría e Inteligencia Ciudadana</h2>
                 <p className="text-sm text-gray-400 max-w-3xl mb-6">
-                  Centralizamos, verificamos y digitalizamos datos críticos en tiempo real. Diseñado para rescatar información vital entre el caos de las redes sociales y canalizar la ayuda sin intermediarios.
+                  Centralizamos canales de financiamiento seguro, estructuramos el flujo de datos en redes y ofrecemos un canal anónimo de denuncia contra la corrupción institucional.
                 </p>
                 
-                {/* LAS 3 ACCIONES EN ORDEN DE IMPORTANCIA REAL */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   
-                  {/* TARJETA 1: EL OBJETIVO PRINCIPAL */}
-                  <div className="bg-gray-950 p-4 rounded-xl border border-red-900/30 hover:border-red-900/60 transition-all bg-gradient-to-b from-gray-950 to-red-950/10">
-                    <span className="text-2xl block mb-2">❤️‍🩹</span>
-                    <h3 className="text-sm font-bold text-red-400 mb-1">1. Localizar Ayuda y Heridos</h3>
-                    <p className="text-xs text-gray-400 mb-2">Encuentra y registra en segundos publicaciones críticas de salud, solicitudes de insumos o heridos que requieren atención inmediata.</p>
-                    <a href="#repositorio" className="text-xs text-red-400 font-semibold hover:underline inline-flex items-center gap-1">Ver Cuentas Verificadas ↓</a>
+                  <div className="bg-gray-950 p-4 rounded-xl border border-green-900/30 hover:border-green-900/60 transition-all bg-gradient-to-b from-gray-950 to-green-950/10">
+                    <span className="text-2xl block mb-2">💰</span>
+                    <h3 className="text-sm font-bold text-green-400 mb-1">1. Match de Donación Segura</h3>
+                    <p className="text-xs text-gray-400 mb-2">Conectamos de forma directa a donantes internacionales con causas, perfiles y recaudaciones 100% confiables, auditadas colectivamente.</p>
+                    <a href="#repositorio" className="text-xs text-green-400 font-semibold hover:underline inline-flex items-center gap-1">Ver Fuentes Confiables ↓</a>
                   </div>
                   
-                  {/* TARJETA 2: EL FILTRO CONTRA FRAUDES */}
-                  <div className="bg-gray-950 p-4 rounded-xl border border-gray-800 hover:border-gray-700 transition-all">
-                    <span className="text-2xl block mb-2">🔍</span>
-                    <h3 className="text-sm font-bold text-white mb-1">2. Auditar Colectas Solidarias</h3>
-                    <p className="text-xs text-gray-400 mb-2">Un padrón comunitario para separar las recaudaciones reales y urgentes de los perfiles falsos que buscan lucrar con la crisis.</p>
-                    <a href="#repositorio" className="text-xs text-gray-400 hover:text-white font-semibold hover:underline inline-flex items-center gap-1">Consultar Repositorio ↓</a>
+                  <div className="bg-gray-950 p-4 rounded-xl border border-blue-900/30 hover:border-blue-900/60 transition-all bg-gradient-to-b from-gray-950 to-blue-950/10">
+                    <span className="text-2xl block mb-2">📊</span>
+                    <h3 className="text-sm font-bold text-blue-400 mb-1">2. Estructurar Tendencias</h3>
+                    <p className="text-xs text-gray-400 mb-2">Normalizamos hashtags en redes para rescatar listas de heridos y reportes críticos, evitando que el algoritmo hunda la información vital.</p>
+                    <a href="/normalizar.html" className="text-xs text-blue-400 font-semibold hover:underline inline-flex items-center gap-1">Normalizar Hashtags →</a>
                   </div>
 
-                  {/* TARJETA 3: LA EVASIÓN DE CENSURA / MAPA */}
-                  <div className="bg-gray-950 p-4 rounded-xl border border-gray-800 hover:border-gray-700 transition-all">
-                    <span className="text-2xl block mb-2">📢</span>
-                    <h3 className="text-sm font-bold text-white mb-1">3. Romper el Bloqueo Informativo</h3>
-                    <p className="text-xs text-gray-400 mb-2">Camufla reportes dentro de tendencias globales para difundir emergencias o visualiza los incidentes en el mapa interactivo.</p>
-                    <div className="flex gap-3 mt-1">
-                      <a href="/normalizar.html" className="text-xs text-gray-400 hover:text-white font-semibold hover:underline">Normalizar →</a>
-                      <a href="/mapa.html" className="text-xs text-gray-400 hover:text-white font-semibold hover:underline">Ver Mapa →</a>
-                    </div>
+                  <div className="bg-gray-950 p-4 rounded-xl border border-red-900/30 hover:border-red-900/60 transition-all bg-gradient-to-b from-gray-950 to-red-950/10">
+                    <span className="text-2xl block mb-2">🕵️‍♂️</span>
+                    <h3 className="text-sm font-bold text-red-400 mb-1">3. Denuncia Anónima Colectiva</h3>
+                    <p className="text-xs text-gray-400 mb-2">Canal Zero-Knowledge para exponer esquemas de corrupción gubernamental y abusos de autoridades locales sin dejar rastro digital.</p>
+                    <a href="#repositorio" className="text-xs text-red-400 font-semibold hover:underline inline-flex items-center gap-1">Reportar Fraude o Abuso ↓</a>
                   </div>
 
                 </div>
               </div>
             </section>
 
+            {/* AVISO DE API PÚBLICA */}
+            <div className="max-w-6xl mx-auto px-4 mt-4">
+              <div className="bg-blue-950/40 border border-blue-800/50 p-4 rounded-xl text-xs text-blue-300 shadow-sm">
+                <p className="leading-relaxed">
+                  <strong className="text-blue-400">⚡ INFRAESTRUCTURA ABIERTA:</strong> En las próximas horas se habilitará una **API pública de acceso directo** para que desarrolladores, brigadas de campo y plataformas aliadas puedan automatizar consultas del repositorio y descargar la base de datos estructurada en formatos **JSON** o **CSV**.
+                </p>
+              </div>
+            </div>
+
             {/* CONTENIDO PRINCIPAL: DOS COLUMNAS */}
             <main id="repositorio" className="p-4 sm:p-6 max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
               
-              {/* COLUMNA DE REGISTRO (1/3 de la pantalla) */}
+              {/* COLUMNA DE REGISTRO (1/3) */}
               <div className="lg:col-span-1 space-y-4">
                 <div className="bg-gray-900 p-5 rounded-xl border border-gray-800">
                   <div className="flex items-center gap-2 mb-3">
@@ -205,7 +214,7 @@
                   </form>
                 </div>
 
-                {/* INFO DEL PROYECTO COLAPSADA MÁS LIMPIA */}
+                {/* INFO DEL PROYECTO */}
                 <div className="bg-gray-900 p-4 rounded-xl border border-gray-800 text-xs space-y-2.5">
                   <h3 className="text-xs font-bold text-red-400 uppercase tracking-wider flex items-center gap-1">
                     🇻🇪 Proyecto Córdoba-Caracas 🇦🇷
@@ -214,7 +223,7 @@
                 </div>
               </div>
 
-              {/* COLUMNA DEL HISTORIAL REPOSITORIO (2/3 de la pantalla) */}
+              {/* COLUMNA DEL HISTORIAL REPOSITORIO (2/3) */}
               <div className="lg:col-span-2 space-y-4">
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3">
                   <div>
@@ -222,7 +231,6 @@
                     <p className="text-xs text-gray-400">Registros validados mediante votación criptográfica por la comunidad.</p>
                   </div>
                   
-                  {/* LLAMADO A COLABORADORES */}
                   <div className="bg-blue-950/20 border border-blue-900/50 p-2.5 rounded-lg text-xs max-w-xs">
                     <p className="text-blue-300 leading-normal">
                       <strong>💻 ¿Eres dev?</strong> Buscamos ayuda sin fines de lucro. Escríbenos a <a href="mailto:andalucia.terrabyte@gmail.com" className="underline font-bold text-blue-400 hover:text-blue-300">andalucia.terrabyte@gmail.com</a>
@@ -245,7 +253,6 @@
                           <h3 className="text-base font-bold mt-1.5 text-white tracking-tight">{c.title}</h3>
                         </div>
                         
-                        {/* SCORE DE CONFIANZA */}
                         <div className="text-center bg-gray-950 p-1.5 rounded-lg border border-gray-800 min-w-[75px]">
                           <span className="block text-[10px] text-gray-500 font-semibold uppercase tracking-wider">Confianza</span>
                           <span className={`text-sm font-black ${c.trust_score >= 0 ? 'text-green-400' : 'text-red-400'}`}>{c.trust_score >= 0 ? `+${c.trust_score}` : c.trust_score}</span>
@@ -275,13 +282,11 @@
             </main>
           </div>
 
-          {/* FOOTER CON DISCLAIMER INTEGRADO */}
+          {/* FOOTER CON DISCLAIMER */}
           <footer className="bg-gray-900 border-t border-gray-800 text-center text-gray-500 p-5 mt-8 space-y-4">
-            {/* TEXTO LEGAL COMPACTO PERO VISIBLE */}
             <div className="max-w-4xl mx-auto text-[10px] text-gray-500 leading-normal border-b border-gray-950 pb-4">
               <strong className="text-gray-400">AVISO LEGAL CIUDADANO:</strong> Este repositorio actúa como un canal descentralizado de auditoría comunitaria y almacenamiento de evidencia histórica. La información aquí reflejada depende estrictamente de las inserciones de los usuarios y de la moderación algorítmica por reputación criptográfica. El equipo de desarrollo no asume responsabilidad civil ni legal alguna por las opiniones, reportes o enlaces provistos por terceros.
             </div>
-
             <div className="space-y-1">
               <p className="font-semibold text-gray-400 text-xs">
                 Proyecto Córdoba-Caracas hecho con ♥ por Andalucia Projects
