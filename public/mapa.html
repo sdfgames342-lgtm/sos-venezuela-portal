@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Mapa – SOS Venezuela 2026</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .layer-btn { padding: 6px 12px; margin: 2px; border-radius: 4px; font-size: 14px; cursor: pointer; }
+    .stats-box { background: rgba(0,0,0,0.7); padding: 6px; border-radius: 4px; }
+  </style>
+</head>
+<body class="bg-gray-900 text-white">
+  <header class="p-3 bg-red-700 shadow-lg">
+    <nav class="flex justify-between items-center">
+      <h1 class="text-xl font-bold">Venezuela Sismo 2026</h1>
+      <div class="flex gap-4 text-sm">
+        <a href="/" class="hover:underline">Inicio</a>
+        <a href="/mapa.html" class="hover:underline">Mapa</a>
+        <a href="/normalizar.html" class="hover:underline">Normalizar</a>
+      </div>
+    </nav>
+    <div id="stats" class="stats-box text-xs mt-2 inline-block">
+      Cargando estadísticas…
+    </div>
+  </header>
+
+  <div id="map" class="w-full h-[calc(100vh-110px)]"></div>
+
+  <div class="absolute top-28 right-3 z-[1000] flex flex-col gap-1">
+    <button onclick="filterLayer('instalacion_peligrosa')" class="layer-btn bg-yellow-600">☢ Peligrosas</button>
+    <button onclick="filterLayer('incendio')" class="layer-btn bg-red-600">🔥 Incendios</button>
+    <button onclick="filterLayer('contaminacion')" class="layer-btn bg-green-600">🌫 Aire</button>
+    <button onclick="filterLayer('sismo')" class="layer-btn bg-purple-600">🌍 Réplicas</button>
+    <button onclick="filterLayer('all')" class="layer-btn bg-gray-500">📌 Todo</button>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script>
+    const map = L.map('map').setView([10.50, -66.91], 11);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '© OpenStreetMap'
+    }).addTo(map);
+
+    const clusterGroup = L.markerClusterGroup({ maxClusterRadius: 50 });
+    map.addLayer(clusterGroup);
+
+    let allData = [];
+
+    const icons = {
+      instalacion_peligrosa: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/564/564619.png', iconSize: [24,24] }),
+      incendio: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/785/785116.png', iconSize: [24,24] }),
+      contaminacion: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1165/1165736.png', iconSize: [24,24] }),
+      sismo: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1475/1475912.png', iconSize: [24,24] })
+    };
+
+    fetch('/data.json')
+      .then(res => res.json())
+      .then(data => {
+        allData = data;
+        updateStats(data);
+        renderMarkers(data);
+      })
+      .catch(e => console.error('Error cargando datos:', e));
+
+    function renderMarkers(data) {
+      clusterGroup.clearLayers();
+      data.forEach(p => {
+        const icon = icons[p.category] || L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [24,24] });
+        const popup = `<b>${p.type}</b><br>${p.valor ? p.valor + ' ' + (p.unidad || '') + '<br>' : ''}${p.status || ''}`;
+        L.marker([p.lat, p.lng], { icon }).bindPopup(popup).addTo(clusterGroup);
+      });
+    }
+
+    function filterLayer(category) {
+      if (category === 'all') return renderMarkers(allData);
+      const filtered = allData.filter(p => p.category === category);
+      renderMarkers(filtered);
+    }
+
+    function updateStats(data) {
+      const countBy = cat => data.filter(p => p.category === cat).length;
+      document.getElementById('stats').innerHTML =
+        `☢ ${countBy('instalacion_peligrosa')} · 🔥 ${countBy('incendio')} · 🌍 ${countBy('sismo')} · 🌫 PM2.5 ${(()=>{
+          const vals = data.filter(p => p.category === 'contaminacion' && p.valor).map(p => p.valor);
+          return vals.length ? (vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(1) : 'N/D';
+        })()}`;
+    }
+  </script>
+</body>
+</html>

@@ -1,73 +1,117 @@
-// fetch-data.js
 const axios = require('axios');
 const fs = require('fs');
+const path = require('path');
 
-/* 
- * URLs reales a reemplazar con los datasets de HDX que correspondan.
- * Para pruebas podés usar cualquier GeoJSON público o descargar de:
- * https://data.humdata.org/ y buscar "earthquake Venezuela 2026"
- */
-const OCHA_URL = 'https://data.humdata.org/dataset/.../resource/.../download/facilities.geojson';
-const DAMAGE_URL = 'https://data.humdata.org/dataset/.../resource/.../download/damage.geojson';
-const AIR_URL = 'https://api.openaq.org/v2/latest?limit=100&country=VE&parameter=pm25';
-
-// Si no tenés API key de OpenAQ, podés omitir esta capa
 const OPENAQ_KEY = process.env.OPENAQ_KEY || '';
+const NASA_KEY = process.env.NASA_KEY || '';
 
-async function fetchJSON(url, headers = {}) {
+// URL para réplicas (USGS)
+const USGS_URL = 'https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&starttime=2026-06-25&minlatitude=8&maxlatitude=12&minlongitude=-73&maxlongitude=-60';
+
+// --- HDX: leer GeoJSON estático si existe ---
+function loadHazardous() {
+  const file = './public/hazardous.geojson';
+  if (fs.existsSync(file)) {
+    try {
+      const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+      return raw.features.map(f => ({
+        lat: f.geometry.coordinates[1],
+        lng: f.geometry.coordinates[0],
+        category: 'instalacion_peligrosa',
+        type: f.properties.NAME || 'Instalación peligrosa',
+        status: f.properties.STATUS || 'Desconocido'
+      }));
+    } catch(e) {
+      console.warn('Error leyendo hazardous.geojson:', e.message);
+    }
+  }
+  console.warn('⚠ hazardous.geojson no encontrado; convertilo con ogr2ogr.');
+  return [];
+}
+
+// --- OpenAQ v3 con IDs numéricos ---
+async function fetchOpenAQ() {
+  if (!OPENAQ_KEY) return [];
   try {
-    const { data } = await axios.get(url, { headers, timeout: 10000 });
-    return data;
-  } catch (e) {
-    console.error(`Error en ${url}: ${e.message}`);
-    return null;
+    const res = await axios.get('https://api.openaq.org/v3/locations/latest', {
+      params: { countries_id: 237, parameters_id: 2 },  // Venezuela, PM2.5
+      headers: { 'X-API-Key': OPENAQ_KEY }
+    });
+    return res.data.results.map(r => ({
+      lat: r.coordinates.latitude,
+      lng: r.coordinates.longitude,
+      category: 'contaminacion',
+      type: r.name || 'Estación',
+      valor: r.sensors?.[0]?.latest?.value,
+      unidad: r.sensors?.[0]?.latest?.unit,
+      ultima_medicion: r.sensors?.[0]?.latest?.datetime?.utc || new Date().toISOString()
+    }));
+  } catch(e) {
+    console.error('OpenAQ:', e.response?.status, e.response?.data);
+    return [];
   }
 }
 
-function transformGeoJSON(geojson, category, extraFields = {}) {
-  if (!geojson || !geojson.features) return [];
-  return geojson.features.map(f => ({
-    lat: f.geometry.coordinates[1],
-    lng: f.geometry.coordinates[0],
-    category,
-    type: f.properties.name || f.properties.facility_type || extraFields.type || 'Punto',
-    status: f.properties.operational_status || extraFields.status || 'sin datos',
-    grade: f.properties.damage_grade || extraFields.grade || '',
-    valor: extraFields.valor,
-    unidad: extraFields.unidad,
-    ultima_medicion: extraFields.ultima_medicion || new Date().toISOString()
-  }));
+// --- NASA FIRMS (solo Venezuela) ---
+async function fetchNASA() {
+  if (!NASA_KEY) return [];
+  const dateStr = new Date(new Date() - 86400000).toISOString().slice(0,10); // ayer
+  const url = `https://firms.modaps.eosdis.nasa.gov/api/area/csv/${NASA_KEY}/VIIRS_NOAA21_NRT/-73,8,-60,12/1/${dateStr}`;
+  try {
+    const res = await axios.get(url, { responseType: 'text' });
+    const lines = res.data.trim().split('\n');
+    if (lines.length < 2) return [];
+    const header = lines[0].split(',').map(h => h.trim());
+    const idx = (name) => header.indexOf(name);
+    const data = lines.slice(1).map(l => l.split(',').map(c => c.trim()));
+    // Limitamos a 500 para no sobrecargar
+    const sample = data.length > 500 ? data.filter((_, i) => i % Math.ceil(data.length/500) === 0) : data;
+    return sample.map(cols => ({
+      lat: parseFloat(cols[idx('latitude')]),
+      lng: parseFloat(cols[idx('longitude')]),
+      category: 'incendio',
+      type: 'Foco de calor',
+      valor: parseFloat(cols[idx('bright_ti4')]),
+      unidad: 'K',
+      ultima_medicion: `${cols[idx('acq_date')]}T${cols[idx('acq_time')]}`
+    }));
+  } catch(e) {
+    console.error('NASA:', e.message);
+    return [];
+  }
+}
+
+// --- USGS ---
+async function fetchUSGS() {
+  try {
+    const res = await axios.get(USGS_URL);
+    return res.data.features.map(f => ({
+      lat: f.geometry.coordinates[1],
+      lng: f.geometry.coordinates[0],
+      category: 'sismo',
+      type: `M${f.properties.mag} – ${f.properties.title}`,
+      valor: f.properties.mag,
+      unidad: 'magnitud',
+      ultima_medicion: new Date(f.properties.time).toISOString()
+    }));
+  } catch(e) {
+    console.error('USGS:', e.message);
+    return [];
+  }
 }
 
 (async () => {
-  // --- Capa 1: Infraestructura humanitaria ---
-  const ochaData = await fetchJSON(OCHA_URL);
-  const infra = transformGeoJSON(ochaData, 'infraestructura', { type: 'Centro de auxilio' });
+  console.log('Obteniendo capas...');
+  const peligrosas = loadHazardous();
+  console.log(`☢ Peligrosas: ${peligrosas.length}`);
+  const aire = await fetchOpenAQ();
+  console.log(`🌫 Aire: ${aire.length}`);
+  const incendios = await fetchNASA();
+  console.log(`🔥 Incendios: ${incendios.length}`);
+  const sismos = await fetchUSGS();
+  console.log(`🌍 Sismos: ${sismos.length}`);
 
-  // --- Capa 2: Daños estructurales (Copernicus EMS, etc.) ---
-  const damageData = await fetchJSON(DAMAGE_URL);
-  const damage = transformGeoJSON(damageData, 'daño_estructural', { type: 'Edificio' });
-
-  // --- Capa 3: Calidad del aire (OpenAQ, requiere API key) ---
-  let air = [];
-  if (OPENAQ_KEY) {
-    const airData = await fetchJSON(AIR_URL, { 'X-API-Key': OPENAQ_KEY });
-    if (airData && airData.results) {
-      air = airData.results.map(r => ({
-        lat: r.coordinates.latitude,
-        lng: r.coordinates.longitude,
-        category: 'contaminacion',
-        type: r.location,
-        status: '',
-        grade: '',
-        valor: r.value,
-        unidad: r.unit,
-        ultima_medicion: r.lastUpdated
-      }));
-    }
-  }
-
-  const combined = [...infra, ...damage, ...air];
-  fs.writeFileSync('./public/data.json', JSON.stringify(combined, null, 2));
-  console.log(`✅ Datos fusionados: ${combined.length} puntos.`);
+  const all = [...peligrosas, ...aire, ...incendios, ...sismos];
+  fs.writeFileSync('./public/data.json', JSON.stringify(all, null, 2));
+  console.log(`✅ Total: ${all.length} puntos.`);
 })();

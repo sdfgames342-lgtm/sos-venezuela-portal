@@ -2,88 +2,256 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>SOS Venezuela – Emergencia Sísmica 2026</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SOS Venezuela – Repositorio Ciudadano</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    .layer-btn { padding: 6px 12px; margin: 2px; border-radius: 4px; font-size: 14px; }
-    .stats-box { background: rgba(0,0,0,0.7); padding: 6px; border-radius: 4px; }
-  </style>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body class="bg-gray-900 text-white">
-  <header class="p-3 bg-red-700 flex justify-between items-center shadow-lg">
-    <div>
-      <h1 class="text-xl font-bold">Venezuela Sismo 2026</h1>
-      <p class="text-xs opacity-80">Daños · Contaminación · Recursos de rescate</p>
-    </div>
-    <div id="stats" class="stats-box text-xs">
-      Cargando estadísticas...
-    </div>
-  </header>
+  <div id="root"></div>
 
-  <div id="map" class="w-full h-[calc(100vh-64px)]"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
 
-  <!-- Panel de capas -->
-  <div class="absolute top-20 right-3 z-[1000] flex flex-col gap-1">
-    <button onclick="filterLayer('infraestructura')" class="layer-btn bg-blue-600">🏥 Infra</button>
-    <button onclick="filterLayer('daño_estructural')" class="layer-btn bg-orange-600">🏚 Daños</button>
-    <button onclick="filterLayer('contaminacion')" class="layer-btn bg-green-600">🌫 Aire</button>
-    <button onclick="filterLayer('all')" class="layer-btn bg-gray-500">📌 Todo</button>
-  </div>
+    const supabaseClient = supabase.createClient(
+      'https://pkajsigfbfwvyddpzhlo.supabase.co',
+      'sb_publishable_AfVuP-hufHWREFUS9Q7vzg_4gypxd9U'
+    );
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script>
-    const map = L.map('map').setView([10.50, -66.91], 11);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap'
-    }).addTo(map);
-
-    let allData = [];
-    const markersLayer = L.layerGroup().addTo(map);
-
-    // Íconos personalizados (pueden ser locales, aquí uso unos genéricos de CDN)
-    const icons = {
-      infraestructura: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684908.png', iconSize: [24,24] }),
-      daño_estructural: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/684/684847.png', iconSize: [24,24] }),
-      contaminacion: L.icon({ iconUrl: 'https://cdn-icons-png.flaticon.com/512/1165/1165736.png', iconSize: [24,24] })
-    };
-
-    fetch('/data.json')
-      .then(res => res.json())
-      .then(data => {
-        allData = data;
-        updateStats(data);
-        renderMarkers(data);
-      })
-      .catch(e => console.error('Error cargando datos:', e));
-
-    function renderMarkers(data) {
-      markersLayer.clearLayers();
-      data.forEach(p => {
-        const icon = icons[p.category] || icons.infraestructura;
-        const popupContent = `<b>${p.type}</b><br>${
-          p.grade ? 'Daño: ' + p.grade + '<br>' : ''
-        }${
-          p.valor ? p.valor + ' ' + p.unidad + '<br>' : ''
-        }Estado: ${p.status || 'sin datos'}`;
-        L.marker([p.lat, p.lng], { icon }).bindPopup(popupContent).addTo(markersLayer);
-      });
+    function generateFingerprint() {
+      const str = navigator.userAgent + screen.width + screen.height;
+      return btoa(str).substring(0, 32);
     }
 
-    function filterLayer(category) {
-      if (category === 'all') return renderMarkers(allData);
-      const filtered = allData.filter(p => p.category === category);
-      renderMarkers(filtered);
+    function PortalApp() {
+      const [fingerprint] = useState(generateFingerprint());
+      const [campaigns, setCampaigns] = useState([]);
+      
+      const [title, setTitle] = useState('');
+      const [sourceUrl, setSourceUrl] = useState('');
+      const [evidenceUrl, setEvidenceUrl] = useState('');
+      const [desc, setDesc] = useState('');
+      const [type, setType] = useState('estafa');
+      const [feedback, setFeedback] = useState('');
+
+      const loadRepository = useCallback(async () => {
+        const { data, error } = await supabaseClient
+          .from('crowdfunding_registry')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!error && data) setCampaigns(data);
+      }, []);
+
+      useEffect(() => {
+        loadRepository();
+      }, [loadRepository]);
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!title || !sourceUrl) {
+          setFeedback('⚠️ Título y Enlace de origen son obligatorios.');
+          return;
+        }
+
+        const { error } = await supabaseClient
+          .from('crowdfunding_registry')
+          .insert({
+            title,
+            source_url: sourceUrl,
+            evidence_url: evidenceUrl,
+            description: desc,
+            category: type
+          });
+
+        if (error) {
+          setFeedback('⚠️ Error al registrar (puede que el enlace ya exista).');
+        } else {
+          setFeedback('✅ Registro exitoso. Guardado en la base de datos.');
+          setTitle(''); setSourceUrl(''); setEvidenceUrl(''); setDesc('');
+          loadRepository();
+        }
+      };
+
+      const handleVote = async (campaignId, delta) => {
+        const { error: voteError } = await supabaseClient
+          .from('campaign_votes')
+          .insert({ campaign_id: campaignId, user_fingerprint: fingerprint, vote_type: delta });
+
+        if (voteError) {
+          alert('Ya emitiste tu voto de confianza para este registro.');
+          return;
+        }
+
+        const campaign = campaigns.find(c => c.id === campaignId);
+        const newScore = (campaign.trust_score || 0) + delta;
+
+        await supabaseClient
+          .from('crowdfunding_registry')
+          .update({ trust_score: newScore })
+          .eq('id', campaignId);
+
+        loadRepository();
+      };
+
+      return (
+        <div className="min-h-screen flex flex-col justify-between">
+          <div>
+            {/* DISCLAIMER LEGAL SUPERIOR */}
+            <div className="bg-amber-950/40 border-b border-amber-700/50 text-amber-200 text-xs px-4 py-2.5 text-center">
+              <div className="max-w-5xl mx-auto font-sans leading-relaxed">
+                <strong className="text-amber-400">⚠️ DESLINDE DE RESPONSABILIDAD LEGAL:</strong> Este repositorio es una plataforma abierta de auditoría ciudadana y resguardo de evidencia descentralizada gestionada de forma comunitaria. La información e índices de confianza reflejados son el resultado de moderaciones colectivas y votos basados en huellas digitales criptográficas. El equipo técnico no se hace responsable por las opiniones, reportes o enlaces indexados por terceros. Todo el material recopilado tiene fines estrictamente informativos, de transparencia y de auditoría social.
+              </div>
+            </div>
+
+            <header className="p-4 bg-red-700 shadow-md">
+              <nav className="flex justify-between items-center max-w-5xl mx-auto">
+                <h1 className="text-xl font-bold">SOS Venezuela – Auditoría</h1>
+                <div className="flex gap-4 text-sm">
+                  <a href="/" className="hover:underline font-bold">Inicio</a>
+                  <a href="/normalizar.html" className="hover:underline">Normalizar</a>
+                </div>
+              </nav>
+            </header>
+
+            <main className="p-6 max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+              
+              {/* COLUMNA 1: FORMULARIO DE REPORTE Y PRUEBAS */}
+              <div className="md:col-span-1 space-y-4">
+                <div className="bg-gray-800 p-5 rounded-lg h-fit">
+                  <h2 className="text-xl font-bold mb-4">🛡️ Registrar Caso / Campaña</h2>
+                  <form onSubmit={handleSubmit} className="space-y-3">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-300 mb-1">Tipo de Registro</label>
+                      <select value={type} onChange={e => setType(e.target.value)} className="w-full p-2 bg-gray-700 rounded text-sm">
+                        <option value="estafa">Denunciar Campaña Falsa / Estafa</option>
+                        <option value="veridico">Campañas de Recaudación Reales</option>
+                        <option value="abuso">Abuso de Autoridad (Militar/Policial)</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-300 mb-1">Título o Nombre del Implicado</label>
+                      <input type="text" value={title} onChange={e => setTitle(e.target.value)} className="w-full p-2 bg-gray-700 rounded text-sm" placeholder="Ej: Juntos Unidos recaudación / Cnel. Pérez" />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-300 mb-1">Enlace del Perfil o Post Principal</label>
+                      <input type="url" value={sourceUrl} onChange={e => setSourceUrl(e.target.value)} className="w-full p-2 bg-gray-700 rounded text-sm" placeholder="https://instagram.com/cuenta_falsa" />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-300 mb-1">Enlace a las Pruebas (Constancia)</label>
+                      <input type="url" value={evidenceUrl} onChange={e => setEvidenceUrl(e.target.value)} className="w-full p-2 bg-gray-700 rounded text-sm" placeholder="https://t.me/canal_pruebas/12" />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-300 mb-1">Detalles breves</label>
+                      <textarea value={desc} onChange={e => setDesc(e.target.value)} rows="3" className="w-full p-2 bg-gray-700 rounded text-sm" placeholder="Detalles de la estafa o abuso..." />
+                    </div>
+
+                    <button type="submit" className="w-full bg-red-600 hover:bg-red-700 py-2 rounded font-bold text-sm transition-colors">
+                      Indexar en Repositorio
+                    </button>
+                    {feedback && <p className="text-xs text-yellow-400 mt-2 text-center">{feedback}</p>}
+                  </form>
+                </div>
+
+                {/* MANIFESTO PROYECTO CÓRDOBA-CARACAS */}
+                <div className="bg-gradient-to-br from-gray-800 to-gray-900 p-5 rounded-lg border border-gray-700 text-xs space-y-3">
+                  <h3 className="text-sm font-bold text-red-400 flex items-center gap-1">
+                    🇻🇪 Proyecto Córdoba-Caracas 🇦🇷
+                  </h3>
+                  <div>
+                    <strong className="text-gray-300 block">Misión:</strong>
+                    <p className="text-gray-400">Proveer herramientas tecnológicas críticas de código abierto que rompan la censura informativa, empoderen la contraloría social y resguarden la memoria histórica ante vulneraciones institucionales.</p>
+                  </div>
+                  <div>
+                    <strong className="text-gray-300 block">Visión:</strong>
+                    <p className="text-gray-400">Convertirse en un puente tecnológico de solidaridad internacional, demostrando que arquitecturas soberanas "Zero-Knowledge" y de bajo costo pueden salvaguardar los derechos humanos en entornos adversos.</p>
+                  </div>
+                  <div>
+                    <strong className="text-gray-300 block">Objetivo:</strong>
+                    <p className="text-gray-400">Automatizar el saneamiento de datos públicos, mitigar la proliferación de campañas fraudulentas en situaciones de emergencia y descentralizar las pruebas digitales frente al bloqueo informático estatal.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* COLUMNA 2 Y 3: REPOSITORIO AUDITABLE */}
+              <div className="md:col-span-2 space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                  <h2 className="text-2xl font-bold">📂 Repositorio de Casos</h2>
+                  
+                  {/* LLAMADO A COLABORADORES */}
+                  <div className="bg-blue-950/50 border border-blue-800/60 p-2.5 rounded text-xs max-w-sm">
+                    <p className="text-blue-300">
+                      <strong>💻 ¿Eres dev? Colabora:</strong> Buscamos programadores para proyectos sin fines de lucro. Escríbenos a <a href="mailto:andalucia.terrabyte@gmail.com" className="underline font-bold text-blue-400">andalucia.terrabyte@gmail.com</a> o revisa pronto nuestro GitHub oficial.
+                    </p>
+                  </div>
+                </div>
+                
+                {campaigns.length === 0 ? (
+                  <p className="text-gray-400">No hay registros cargados en el repositorio.</p>
+                ) : (
+                  campaigns.map(c => (
+                    <div key={c.id} className={`p-4 rounded-lg border bg-gray-800 ${c.category === 'estafa' ? 'border-red-900' : c.category === 'abuso' ? 'border-purple-900' : 'border-green-900'}`}>
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <span className={`text-xs px-2 py-0.5 rounded font-bold uppercase ${c.category === 'estafa' ? 'bg-red-900 text-red-200' : c.category === 'abuso' ? 'bg-purple-900 text-purple-200' : 'bg-green-900 text-green-200'}`}>
+                            {c.category === 'estafa' ? 'Alerta: Estafa' : c.category === 'abuso' ? 'Abuso DDHH' : 'Campaña Verificada'}
+                          </span>
+                          <h3 className="text-lg font-bold mt-1">{c.title}</h3>
+                        </div>
+                        
+                        <div className="text-center bg-gray-950 p-2 rounded border border-gray-700 min-w-[70px]">
+                          <span className="block text-xs text-gray-400">Confianza</span>
+                          <span className={`text-base font-bold ${c.trust_score >= 0 ? 'text-green-400' : 'text-red-400'}`}>{c.trust_score}</span>
+                          <div className="flex justify-center gap-2 mt-1 border-t border-gray-800 pt-1">
+                            <button onClick={() => handleVote(c.id, 1)} className="text-xs text-green-500 hover:font-bold">▲</button>
+                            <button onClick={() => handleVote(c.id, -1)} className="text-xs text-red-500 hover:font-bold">▼</button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <p className="text-sm text-gray-300 mb-3">{c.description}</p>
+                      
+                      <div className="flex flex-wrap gap-4 text-xs">
+                        <a href={c.source_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 underline break-all">
+                          🔗 Enlace Origen
+                        </a>
+                        {c.evidence_url && (
+                          <a href={c.evidence_url} target="_blank" rel="noopener noreferrer" className="text-yellow-400 underline break-all">
+                            📄 Constancia de Pruebas
+                        </a>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </main>
+          </div>
+
+          {/* FOOTER CON INSTITUCIÓN Y COPYRIGHT */}
+          <footer className="bg-gray-950 border-t border-gray-800 text-center text-xs text-gray-500 p-6 space-y-2">
+            <p className="font-semibold text-gray-400">
+              Proyecto Córdoba-Caracas hecho con ♥ por Andalucia Projects
+            </p>
+            <p className="text-[11px] text-gray-500 max-w-xl mx-auto">
+              Andalucia Projects es un proyecto de fundación argentina en proceso de constitución jurídica. Todo el código desarrollado se rige bajo licencias libres en favor de los derechos civiles fundamentales.
+            </p>
+            <p className="text-[10px] text-gray-600 pt-2 border-t border-gray-900">
+              © 2026 Andalucia Projects. Algunos derechos reservados. El uso indebido de esta plataforma para perjurio o falsificación de pruebas comunitarias anulará de forma algorítmica las credenciales del emisor.
+            </p>
+          </footer>
+        </div>
+      );
     }
 
-    function updateStats(data) {
-      const damageCount = data.filter(p => p.category === 'daño_estructural').length;
-      const airVals = data.filter(p => p.category === 'contaminacion' && p.valor).map(p => p.valor);
-      const avgAir = airVals.length ? (airVals.reduce((a,b)=>a+b,0)/airVals.length).toFixed(1) : 'N/D';
-      document.getElementById('stats').innerHTML = 
-        `🏚 Daños: <b>${damageCount}</b> · 🌫 PM2.5 prom: <b>${avgAir}</b>`;
-    }
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<PortalApp />);
   </script>
 </body>
 </html>
