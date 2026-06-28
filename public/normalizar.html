@@ -21,23 +21,66 @@
       'sb_publishable_AfVuP-hufHWREFUS9Q7vzg_4gypxd9U'
     );
 
-    function sanitizeText(text) {
-      let clean = text.replace(/\b(ba\s?){2,}/gi, '');
-      const insults = ['puto', 'marico', 'guevon', 'malparido', 'hdp', 'hijueputa'];
-      insults.forEach(word => {
-        const regex = new RegExp(`\\b${word}\\b`, 'gi');
-        clean = clean.replace(regex, '[abuso detectado]');
-      });
-      return clean.trim();
+    // ============================================================
+    // Lógica determinista de normalización (sin IA)
+    // ============================================================
+
+    /**
+     * Genera el bloque de texto con hashtags según la fórmula:
+     * Raíz + Ámbito + Acción + Tendencias del día
+     */
+    function generarTextoNormalizado(userText, ambito, accion, tendenciasDia = []) {
+      // 1. Raíz invariante
+      const raiz = "#VZN26";
+
+      // 2. Construcción del ámbito y acción
+      let hashtagEspecifico = raiz;
+
+      if (ambito === "ls") {
+        hashtagEspecifico += "_ls"; // #VZN26_ls
+      } else if (ambito === "dn") {
+        hashtagEspecifico += "_dn"; // #VZN26_dn
+        // Mapeo de acciones para donaciones
+        const mapeoAcciones = {
+          fakecf: "_fakecf",
+          realcf: "_realcf",
+          abuse: "_abuse",
+          hoax: "_hoax"
+        };
+        if (mapeoAcciones[accion]) {
+          hashtagEspecifico += mapeoAcciones[accion];
+        }
+      } else if (ambito === "proyectos") {
+        hashtagEspecifico += "_proyectos"; // #VZN26_proyectos
+      }
+
+      // 3. Sanitizar tendencias (asegurar # al inicio)
+      const tendenciasSanitizadas = tendenciasDia
+        .filter(t => t && t.trim().length > 0)
+        .map(t => t.startsWith('#') ? t : `#${t}`)
+        .join(' ');
+
+      // 4. Armar bloque de hashtags
+      const bloqueHashtags = `${raiz} ${hashtagEspecifico} ${tendenciasSanitizadas}`.trim();
+
+      // 5. Devolver texto completo
+      return `${userText}\n\n${bloqueHashtags}`;
     }
 
+    // ============================================================
+    // Componente React
+    // ============================================================
+
     function NormalizarApp() {
-      const [category, setCategory] = useState('listas');
+      // Estado para el ámbito y acción
+      const [ambito, setAmbito] = useState('ls');
+      const [accion, setAccion] = useState(''); // solo para dn
       const [userText, setUserText] = useState('');
-      const [trendData, setTrendData] = useState(null);
+      const [tendencias, setTendencias] = useState([]);
       const [preview, setPreview] = useState('');
       const [error, setError] = useState('');
 
+      // Cargar tendencias desde Supabase (solo las tendencias, no las plantillas)
       useEffect(() => {
         async function loadTrends() {
           const { data, error } = await supabaseClient
@@ -45,12 +88,43 @@
             .select('value')
             .eq('key', 'live_trends')
             .single();
-          if (!error && data) setTrendData(data.value);
+
+          if (!error && data) {
+            // Se espera que value.trend sea un string o un array
+            const trendValue = data.value;
+            if (typeof trendValue === 'string') {
+              // Si es un solo string, lo metemos en un array
+              setTendencias([trendValue]);
+            } else if (Array.isArray(trendValue)) {
+              setTendencias(trendValue);
+            } else if (trendValue && typeof trendValue === 'object' && trendValue.trend) {
+              // Si tiene propiedad trend
+              setTendencias([trendValue.trend]);
+            } else {
+              setTendencias(['#EmergenciaVE']); // fallback
+            }
+          } else {
+            // Fallback si no hay datos
+            setTendencias(['#EmergenciaVE']);
+          }
         }
+
         loadTrends();
+        // Actualizar cada 5 minutos
         const interval = setInterval(loadTrends, 300000);
         return () => clearInterval(interval);
       }, []);
+
+      // Sanitización básica
+      function sanitizeText(text) {
+        let clean = text.replace(/\b(ba\s?){2,}/gi, '');
+        const insults = ['puto', 'marico', 'guevon', 'malparido', 'hdp', 'hijueputa'];
+        insults.forEach(word => {
+          const regex = new RegExp(`\\b${word}\\b`, 'gi');
+          clean = clean.replace(regex, '[abuso detectado]');
+        });
+        return clean.trim();
+      }
 
       const handleGenerate = () => {
         const sanitized = sanitizeText(userText);
@@ -60,32 +134,23 @@
         }
         setError('');
 
-        const hashtagMadre = '#VZN26';
-        const categoryMap = { listas: 'ls', donar: 'dn', denuncia: 'dn_abuse', proyectos: 'proyectos' };
-        const hijo = `#VZN26_${categoryMap[category] || category}`;
-        const trendTag = trendData?.trend || '#WorldCup2026';
+        // Generar el bloque con la fórmula
+        const result = generarTextoNormalizado(sanitized, ambito, accion, tendencias);
+        setPreview(result);
 
-        let bodyText = '';
-        if (trendData?.templates?.length) {
-          const template = trendData.templates[Math.floor(Math.random() * trendData.templates.length)];
-          bodyText = template
-            .replace('{{DENUNCIA}}', sanitized)
-            .replace('{{TREND}}', trendTag);
-        } else {
-          bodyText = sanitized;
-        }
-
-        const finalBlock = `${bodyText}\n\n${hashtagMadre} ${hijo} ${trendTag}`;
-        setPreview(finalBlock);
-
-        navigator.clipboard.writeText(finalBlock)
+        // Copiar al portapapeles
+        navigator.clipboard.writeText(result)
           .then(() => alert('✅ Bloque copiado. Ahora pégalo en tus redes.'))
           .catch(() => alert('⚠️ Copiá manualmente el texto desde la vista previa.'));
       };
 
+      // Determinar si mostrar selector de acción
+      const showAccion = ambito === 'dn';
+
       return (
         <div className="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
           <div>
+            {/* Header */}
             <header className="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4">
               <nav className="flex justify-between items-center max-w-7xl mx-auto h-16">
                 <div className="flex items-center gap-3">
@@ -106,24 +171,41 @@
               </nav>
             </header>
 
+            {/* Contenido principal */}
             <main className="p-4 md:p-6 max-w-3xl mx-auto">
               <div className="bg-[#090d16]/80 backdrop-blur-md p-6 rounded-xl border border-gray-800 shadow-xl">
                 <h2 className="text-xl font-bold text-white font-mono mb-4 flex items-center gap-2">
                   <span className="text-blue-400">📢</span> Publicar sin censura
                 </h2>
-                <p className="text-xs text-gray-400 mb-6 leading-relaxed">Saneamiento automático, plantillas orgánicas y hashtags fragmentados.</p>
+                <p className="text-xs text-gray-400 mb-6 leading-relaxed font-mono">
+                  Plataforma de código abierto y contrainteligencia ciudadana que permite denunciar de forma anónima, con nombres y pruebas, a corruptos que desvían ayuda humanitaria en Venezuela, indexándolos en un mapa forense inmune a la censura. Incluye un motor que acelera la indexación de videos y posteos de auxilio en redes sociales para romper el bloqueo del algoritmo y maximizar su alcance, optimizando la localización de listas nuevas publicadas en diferentes perfiles al centralizarlas bajo un mismo <strong>hashtag</strong>.
+                </p>
 
                 <div className="space-y-4 text-xs font-mono">
+                  {/* Ámbito */}
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Categoría</label>
-                    <select value={category} onChange={e => setCategory(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all">
-                      <option value="listas">Listas / Actas (#VZN26_ls)</option>
-                      <option value="donar">Donaciones (#VZN26_dn)</option>
-                      <option value="denuncia">Denuncias (#VZN26_dn_abuse)</option>
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ámbito</label>
+                    <select value={ambito} onChange={e => setAmbito(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all">
+                      <option value="ls">Listas / Actas (#VZN26_ls)</option>
+                      <option value="dn">Donaciones / Denuncias (#VZN26_dn_*)</option>
                       <option value="proyectos">Proyectos (#VZN26_proyectos)</option>
                     </select>
                   </div>
 
+                  {/* Acción (solo si ámbito es dn) */}
+                  {showAccion && (
+                    <div>
+                      <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Acción (para #VZN26_dn)</label>
+                      <select value={accion} onChange={e => setAccion(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500/30 transition-all">
+                        <option value="fakecf">Fake CF (estafa) → #VZN26_dn_fakecf</option>
+                        <option value="realcf">Real CF (auditada) → #VZN26_dn_realcf</option>
+                        <option value="abuse">Abuso militar/policial → #VZN26_dn_abuse</option>
+                        <option value="hoax">Desmentido (fake news) → #VZN26_dn_hoax</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Texto del usuario */}
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tu descripción o enlace</label>
                     <textarea value={userText} onChange={e => setUserText(e.target.value)} rows="4" className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-blue-500 transition-all resize-none" placeholder="Escribí al menos 80 caracteres..." />
@@ -131,15 +213,29 @@
                     {error && <p className="text-red-400 text-[11px] mt-1">{error}</p>}
                   </div>
 
+                  {/* Mostrar tendencias actuales (solo lectura) */}
                   <div>
-                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tendencia inyectada (Gemini)</label>
-                    <input type="text" value={trendData?.trend || 'Cargando...'} readOnly className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-400" />
+                    <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tendencias del día (inyección)</label>
+                    <div className="flex flex-wrap gap-1 bg-gray-950 p-2 rounded-lg border border-gray-800 min-h-8">
+                      {tendencias.length > 0 ? (
+                        tendencias.map((t, idx) => (
+                          <span key={idx} className="text-blue-400 text-[11px] bg-blue-950/30 px-2 py-0.5 rounded border border-blue-900/30">
+                            {t.startsWith('#') ? t : `#${t}`}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="text-gray-500 text-[11px]">Cargando tendencias…</span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-gray-500 mt-1">Estos hashtags se añadirán automáticamente a tu publicación.</p>
                   </div>
 
+                  {/* Botón generar */}
                   <button onClick={handleGenerate} className="w-full bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white py-2.5 rounded-lg font-bold uppercase tracking-wider shadow-lg shadow-blue-900/20 active:scale-[0.99] transition-all">
                     Generar y copiar
                   </button>
 
+                  {/* Vista previa */}
                   {preview && (
                     <div className="mt-4">
                       <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Vista previa generada:</label>
@@ -151,6 +247,7 @@
             </main>
           </div>
 
+          {/* Footer */}
           <footer className="bg-[#070b12] border-t border-gray-900/60 p-6 text-center text-gray-500 space-y-4 font-mono text-xs">
             <div className="max-w-5xl mx-auto text-[10px] text-gray-500/80 leading-relaxed border-b border-gray-950 pb-4">
               <strong className="text-gray-400">AVISO LEGAL SOBERANO:</strong> Esta herramienta opera como un canal neutral descentralizado para el almacenamiento criptográfico de auditoría colectiva. La información aquí contenida depende estrictamente de las inserciones distribuidas de los usuarios. El equipo de desarrollo e infraestructura internacional no asume responsabilidad civil, penal o regulatoria por los enlaces o datos suministrados por terceros.
