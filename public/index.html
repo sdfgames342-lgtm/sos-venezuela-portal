@@ -14,7 +14,7 @@
   <div id="root"></div>
 
   <script type="text/babel">
-    const { useState, useEffect, useCallback } = React;
+    const { useState, useEffect, useCallback, useRef } = React;
 
     const supabaseClient = supabase.createClient(
       'https://pkajsigfbfwvyddpzhlo.supabase.co',
@@ -37,6 +37,11 @@
       const [type, setType] = useState('estafa');
       const [feedback, setFeedback] = useState('');
 
+      // Nuevos campos de ubicación
+      const [lat, setLat] = useState('');
+      const [lng, setLng] = useState('');
+      const [locationLoading, setLocationLoading] = useState(false);
+
       const loadRepository = useCallback(async () => {
         const { data, error } = await supabaseClient
           .from('crowdfunding_registry')
@@ -49,6 +54,26 @@
         loadRepository();
       }, [loadRepository]);
 
+      // Obtener ubicación del navegador
+      const getLocation = () => {
+        if (!navigator.geolocation) {
+          alert('Tu navegador no soporta geolocalización.');
+          return;
+        }
+        setLocationLoading(true);
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setLat(pos.coords.latitude.toString());
+            setLng(pos.coords.longitude.toString());
+            setLocationLoading(false);
+          },
+          (err) => {
+            alert('No se pudo obtener la ubicación: ' + err.message);
+            setLocationLoading(false);
+          }
+        );
+      };
+
       const handleSubmit = async (e) => {
         e.preventDefault();
         if (!title || !sourceUrl) {
@@ -56,21 +81,26 @@
           return;
         }
 
+        const payload = {
+          title,
+          source_url: sourceUrl,
+          evidence_url: evidenceUrl,
+          description: desc,
+          category: type,
+          lat: lat ? parseFloat(lat) : null,
+          lng: lng ? parseFloat(lng) : null
+        };
+
         const { error } = await supabaseClient
           .from('crowdfunding_registry')
-          .insert({
-            title,
-            source_url: sourceUrl,
-            evidence_url: evidenceUrl,
-            description: desc,
-            category: type
-          });
+          .insert(payload);
 
         if (error) {
           setFeedback('⚠️ Error al registrar (puede que el enlace ya exista).');
         } else {
           setFeedback('✅ Registro exitoso. Guardado en la base de datos.');
           setTitle(''); setSourceUrl(''); setEvidenceUrl(''); setDesc('');
+          setLat(''); setLng('');
           loadRepository();
         }
       };
@@ -156,17 +186,16 @@
               </div>
             </section>
 
-            {/* AVISO DE API PÚBLICA - DETALLADO */}
+            {/* AVISO DE API PÚBLICA - AHORA ACTIVA */}
             <div className="max-w-6xl mx-auto px-4 mt-4">
-              <div className="bg-blue-950/40 border border-blue-800/50 p-4 rounded-xl text-xs text-blue-300 shadow-sm">
-                <p className="leading-relaxed font-semibold text-blue-400 mb-2">⚡ INFRAESTRUCTURA ABIERTA - API PÚBLICA (Fase de desarrollo activo)</p>
-                <p className="leading-relaxed text-xs text-blue-200/80 mb-3">La API pública se encuentra actualmente en fase de desarrollo activo y construcción de infraestructura. En las próximas horas se desplegarán y habilitarán los siguientes endpoints de acceso público de lectura:</p>
-                <ul className="list-disc list-inside space-y-2 text-blue-200/90">
-                  <li><strong className="text-blue-300">GET /api/v1/registry</strong> – Endpoint de lectura que devolverá el listado completo de las campañas de donación auditadas, reportes de estafas y casos de abuso de autoridad validados por la comunidad. El output entregará la información procesada y sanitizada en formato JSON.</li>
-                  <li><strong className="text-blue-300">GET /api/v1/registry/export</strong> – Endpoint optimizado para brigadas y desarrolladores de campo que permitirá la descarga directa de la base de datos de contraloría en formato CSV para su consumo e integración en sistemas locales o entornos sin conexión continua.</li>
-                  <li><strong className="text-blue-300">GET /api/v1/trends/normalized</strong> – Endpoint que proveerá el esquema estructurado de hashtags, listas y tendencias depuradas en redes sociales para facilitar la automatización de flujos informáticos antibloqueo.</li>
+              <div className="bg-green-950/30 border border-green-800/50 p-4 rounded-xl text-xs text-green-300 shadow-sm">
+                <p className="leading-relaxed font-semibold text-green-400 mb-2">✅ API PÚBLICA ACTIVA</p>
+                <p className="leading-relaxed text-xs text-green-200/80 mb-3">Los siguientes endpoints están disponibles para consumo público. Consulta la sección "Para desarrolladores" al final de la página para más detalles.</p>
+                <ul className="list-disc list-inside space-y-1 text-green-200/90">
+                  <li><strong className="text-green-300">GET /api/v1/registry</strong> – JSON con todas las campañas auditadas.</li>
+                  <li><strong className="text-green-300">GET /api/v1/registry/export</strong> – CSV descargable.</li>
+                  <li><strong className="text-green-300">GET /api/v1/trends/normalized</strong> – Tendencias y plantillas para evasión de censura.</li>
                 </ul>
-                <p className="leading-relaxed text-xs text-blue-300/70 mt-3">Estos endpoints serán documentados en el repositorio oficial de GitHub. Mantente atento a las actualizaciones.</p>
               </div>
             </div>
 
@@ -212,6 +241,21 @@
                       <textarea value={desc} onChange={e => setDesc(e.target.value)} rows="3" className="w-full p-2 bg-gray-950 border border-gray-800 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-red-600 transition-colors" placeholder="Explica brevemente por qué es falso o los detalles del abuso de autoridad..." />
                     </div>
 
+                    {/* Campos de ubicación */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Latitud</label>
+                        <input type="text" value={lat} onChange={e => setLat(e.target.value)} className="w-full p-2 bg-gray-950 border border-gray-800 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-red-600 transition-colors" placeholder="-12.0464" />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-1">Longitud</label>
+                        <input type="text" value={lng} onChange={e => setLng(e.target.value)} className="w-full p-2 bg-gray-950 border border-gray-800 rounded-lg text-sm text-gray-200 placeholder-gray-600 focus:outline-none focus:border-red-600 transition-colors" placeholder="-77.0428" />
+                      </div>
+                    </div>
+                    <button type="button" onClick={getLocation} disabled={locationLoading} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-1.5 rounded-lg text-xs font-semibold transition-all disabled:opacity-50">
+                      {locationLoading ? 'Obteniendo ubicación...' : '📍 Usar mi ubicación actual'}
+                    </button>
+
                     <button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-bold text-sm transition-all shadow-md active:scale-[0.98]">
                       Indexar Información
                     </button>
@@ -256,6 +300,9 @@
                             {c.category === 'estafa' ? '🚨 Alerta: Estafa' : c.category === 'abuso' ? '⚠️ Abuso DDHH' : '✅ Campaña Verificada'}
                           </span>
                           <h3 className="text-base font-bold mt-1.5 text-white tracking-tight">{c.title}</h3>
+                          {c.lat && c.lng && (
+                            <span className="text-[10px] text-gray-500 block mt-0.5">📍 {c.lat}, {c.lng}</span>
+                          )}
                         </div>
 
                         <div className="text-center bg-gray-950 p-1.5 rounded-lg border border-gray-800 min-w-[75px]">
@@ -285,6 +332,37 @@
                 )}
               </div>
             </main>
+
+            {/* SECCIÓN PARA DESARROLLADORES */}
+            <section className="max-w-6xl mx-auto px-4 mt-8 pb-4 border-t border-gray-800 pt-6">
+              <h3 className="text-lg font-bold text-white mb-4">👨‍💻 Para desarrolladores</h3>
+              <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 text-xs text-gray-300 space-y-4">
+                <p className="text-sm text-gray-400">La API pública ya está activa. Puedes consumir los siguientes endpoints sin autenticación:</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-gray-950 p-3 rounded-lg border border-gray-800">
+                    <span className="text-green-400 font-mono text-xs">GET /api/v1/registry</span>
+                    <p className="text-gray-500 mt-1">Listado completo de campañas y denuncias en JSON.</p>
+                    <pre className="bg-black/40 p-2 rounded mt-1 overflow-x-auto text-gray-400 text-[10px] font-mono">curl https://ve-emergency-map.vercel.app/api/v1/registry</pre>
+                  </div>
+                  <div className="bg-gray-950 p-3 rounded-lg border border-gray-800">
+                    <span className="text-yellow-400 font-mono text-xs">GET /api/v1/registry/export</span>
+                    <p className="text-gray-500 mt-1">Descarga en formato CSV para integración local.</p>
+                    <pre className="bg-black/40 p-2 rounded mt-1 overflow-x-auto text-gray-400 text-[10px] font-mono">curl https://ve-emergency-map.vercel.app/api/v1/registry/export</pre>
+                  </div>
+                  <div className="bg-gray-950 p-3 rounded-lg border border-gray-800">
+                    <span className="text-blue-400 font-mono text-xs">GET /api/v1/trends/normalized</span>
+                    <p className="text-gray-500 mt-1">Tendencias y plantillas para evasión de censura.</p>
+                    <pre className="bg-black/40 p-2 rounded mt-1 overflow-x-auto text-gray-400 text-[10px] font-mono">curl https://ve-emergency-map.vercel.app/api/v1/trends/normalized</pre>
+                  </div>
+                </div>
+                <div className="bg-blue-950/20 border border-blue-900/50 p-3 rounded-lg">
+                  <p className="text-blue-300 text-xs">
+                    <strong>📌 ¿Quieres contribuir?</strong> El proyecto es de código abierto. Escríbenos a <a href="mailto:andalucia.terrabyte@gmail.com" className="underline font-bold text-blue-400 hover:text-blue-300">andalucia.terrabyte@gmail.com</a> o visita nuestro repositorio en GitHub (próximamente).
+                  </p>
+                  <p className="text-gray-500 text-[10px] mt-2">Documentación completa de la API y ejemplos en diferentes lenguajes estarán disponibles en el repositorio oficial.</p>
+                </div>
+              </div>
+            </section>
           </div>
 
           {/* FOOTER CON DISCLAIMER */}
