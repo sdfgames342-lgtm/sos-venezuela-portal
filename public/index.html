@@ -35,12 +35,17 @@
       return map[category] || '#VZN26';
     }
 
+    // IDs de los dos registros de prueba originales
+    const TEST_IDS = [
+      'f27dd625-9bad-43de-9d4c-dbe8f3091d99', // Unidos por Venezuela - Falsa recaudación
+      '0af0c4cc-0c93-423a-a2ef-848fd1b5b810'  // Campaña de alimentos para Valencia
+    ];
+
     function PortalApp() {
       const [fingerprint] = useState(generateFingerprint());
       const [campaigns, setCampaigns] = useState([]);
       const [searchTerm, setSearchTerm] = useState('');
 
-      // Estado para el modal de impugnación
       const [showImpugnacion, setShowImpugnacion] = useState(false);
       const [impugnacionId, setImpugnacionId] = useState(null);
       const [descargoText, setDescargoText] = useState('');
@@ -79,7 +84,6 @@
         loadRepository();
       };
 
-      // Abrir modal de impugnación
       const openImpugnacion = (id) => {
         setImpugnacionId(id);
         setDescargoText('');
@@ -87,16 +91,12 @@
         setShowImpugnacion(true);
       };
 
-      // Enviar impugnación
       const submitImpugnacion = async () => {
         if (!descargoText.trim()) {
           setImpugnacionFeedback('Por favor, escribe un descargo o contraprueba.');
           return;
         }
-        // Aquí puedes guardar en una tabla "impugnaciones" si lo deseas.
-        // Por ahora, solo mostramos un mensaje de éxito.
         setImpugnacionFeedback('✅ Impugnación recibida. Un moderador revisará el caso.');
-        // Limpiar y cerrar después de 2 segundos
         setTimeout(() => {
           setShowImpugnacion(false);
           setImpugnacionId(null);
@@ -115,6 +115,9 @@
                  tag.toLowerCase().includes(term);
         });
       }, [campaigns, searchTerm]);
+
+      // Determinar si un registro es de prueba
+      const isTestRecord = (id) => TEST_IDS.includes(id);
 
       return (
         <div className="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
@@ -300,63 +303,72 @@
                       : '[ NINGÚN RESULTADO COINCIDE CON TU BÚSQUEDA ]'}
                   </div>
                 ) : (
-                  filteredCampaigns.map(c => (
-                    <div key={c.id} className={`p-4 rounded-xl border bg-[#090d16]/60 backdrop-blur-sm transition-all shadow-md flex flex-col md:flex-row justify-between gap-4 ${
-                      c.category === 'estafa' ? 'border-red-950/40 hover:border-red-900/40' :
-                      c.category === 'abuso' ? 'border-purple-950/40 hover:border-purple-900/40' :
-                      'border-emerald-950/40 hover:border-emerald-900/40'
-                    }`}>
-                      <div className="flex-1 space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold tracking-wider uppercase border font-mono ${
-                            c.category === 'estafa' ? 'bg-red-950/50 text-red-400 border-red-900/30' :
-                            c.category === 'abuso' ? 'bg-purple-950/50 text-purple-400 border-purple-900/30' :
-                            'bg-emerald-950/50 text-emerald-400 border-emerald-900/30'
-                          }`}>
-                            {c.category === 'estafa' ? '🚨 Reporte: Fraude / Estafa' : c.category === 'abuso' ? '⚠️ Alerta Abuso' : '✅ Cuenta Verificada'}
-                          </span>
-                          <span className="text-[10px] text-blue-400 font-mono bg-blue-950/30 px-1.5 py-0.5 rounded border border-blue-900/30">
-                            {getTagForCategory(c.category)}
-                          </span>
-                          {c.lat && c.lng && (
-                            <span className="text-[10px] text-gray-500 font-mono bg-gray-950 border border-gray-900 px-1.5 py-0.5 rounded">
-                              📍 {parseFloat(c.lat).toFixed(4)}, {parseFloat(c.lng).toFixed(4)}
+                  filteredCampaigns.map(c => {
+                    const isTest = isTestRecord(c.id);
+                    return (
+                      <div key={c.id} className={`p-4 rounded-xl border bg-[#090d16]/60 backdrop-blur-sm transition-all shadow-md flex flex-col md:flex-row justify-between gap-4 ${
+                        c.category === 'estafa' ? 'border-red-950/40 hover:border-red-900/40' :
+                        c.category === 'abuso' ? 'border-purple-950/40 hover:border-purple-900/40' :
+                        'border-emerald-950/40 hover:border-emerald-900/40'
+                      }`}>
+                        <div className="flex-1 space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold tracking-wider uppercase border font-mono ${
+                              c.category === 'estafa' ? 'bg-red-950/50 text-red-400 border-red-900/30' :
+                              c.category === 'abuso' ? 'bg-purple-950/50 text-purple-400 border-purple-900/30' :
+                              'bg-emerald-950/50 text-emerald-400 border-emerald-900/30'
+                            }`}>
+                              {c.category === 'estafa' ? '🚨 Reporte: Fraude / Estafa' : c.category === 'abuso' ? '⚠️ Alerta Abuso' : '✅ Cuenta Verificada'}
                             </span>
-                          )}
-                        </div>
-                        <h3 className="text-base font-bold text-white tracking-tight">{c.title}</h3>
-                        <p className="text-xs text-gray-400 leading-relaxed bg-black/40 p-3 rounded-lg border border-gray-950 font-mono">
-                          {c.description}
-                        </p>
-                        <div className="flex flex-wrap gap-4 text-[11px] font-mono pt-1">
-                          <a href={c.source_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 font-semibold underline decoration-blue-500/30">
-                            🔗 Enlace Incriminado / Post
-                          </a>
-                          {c.evidence_url && (
-                            <a href={c.evidence_url} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 font-semibold underline decoration-amber-500/30">
-                              📄 Enlace de Respaldo Forense
+                            <span className="text-[10px] text-blue-400 font-mono bg-blue-950/30 px-1.5 py-0.5 rounded border border-blue-900/30">
+                              {getTagForCategory(c.category)}
+                            </span>
+                            {c.lat && c.lng && (
+                              <span className="text-[10px] text-gray-500 font-mono bg-gray-950 border border-gray-900 px-1.5 py-0.5 rounded">
+                                📍 {parseFloat(c.lat).toFixed(4)}, {parseFloat(c.lng).toFixed(4)}
+                              </span>
+                            )}
+                            {/* Insignia de registro de prueba */}
+                            {isTest && (
+                              <span className="text-[9px] bg-yellow-500/20 text-yellow-400 border border-yellow-500/40 px-2 py-0.5 rounded-full font-mono flex items-center gap-1">
+                                🧪 Registro de prueba
+                              </span>
+                            )}
+                          </div>
+                          <h3 className="text-base font-bold text-white tracking-tight">{c.title}</h3>
+                          <p className="text-xs text-gray-400 leading-relaxed bg-black/40 p-3 rounded-lg border border-gray-950 font-mono">
+                            {c.description}
+                          </p>
+                          <div className="flex flex-wrap gap-4 text-[11px] font-mono pt-1">
+                            <a href={c.source_url} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 transition-colors flex items-center gap-1 font-semibold underline decoration-blue-500/30">
+                              🔗 Enlace Incriminado / Post
                             </a>
-                          )}
-                          <button
-                            onClick={() => openImpugnacion(c.id)}
-                            className="text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-1 font-semibold underline decoration-yellow-500/30"
-                          >
-                            ⚖️ Impugnar Reporte
-                          </button>
+                            {c.evidence_url && (
+                              <a href={c.evidence_url} target="_blank" rel="noopener noreferrer" className="text-amber-400 hover:text-amber-300 transition-colors flex items-center gap-1 font-semibold underline decoration-amber-500/30">
+                                📄 Enlace de Respaldo Forense
+                              </a>
+                            )}
+                            <button
+                              onClick={() => openImpugnacion(c.id)}
+                              className="text-yellow-400 hover:text-yellow-300 transition-colors flex items-center gap-1 font-semibold underline decoration-yellow-500/30"
+                            >
+                              ⚖️ Impugnar Reporte
+                            </button>
+                          </div>
+                        </div>
+                        <div className="flex md:flex-col justify-between items-center bg-gray-950/80 p-2.5 rounded-xl border border-gray-800/80 min-w-[100px] h-fit md:h-24 shadow-inner font-mono">
+                          <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Confianza</span>
+                          <span className={`text-base font-black tracking-tighter ${c.trust_score >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                            {c.trust_score >= 0 ? `+${c.trust_score}` : c.trust_score}
+                          </span>
+                          <div className="flex gap-2 border-t md:border-t-0 border-gray-900 pt-1 md:pt-0">
+                            <button onClick={() => handleVote(c.id, 1)} className="bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-900/40 text-emerald-400 w-6 h-6 flex items-center justify-center rounded transition-all font-bold text-xs">▲</button>
+                            <button onClick={() => handleVote(c.id, -1)} className="bg-red-950/40 hover:bg-red-900/60 border border-red-900/40 text-red-400 w-6 h-6 flex items-center justify-center rounded transition-all font-bold text-xs">▼</button>
+                          </div>
                         </div>
                       </div>
-                      <div className="flex md:flex-col justify-between items-center bg-gray-950/80 p-2.5 rounded-xl border border-gray-800/80 min-w-[100px] h-fit md:h-24 shadow-inner font-mono">
-                        <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold">Confianza</span>
-                        <span className={`text-base font-black tracking-tighter ${c.trust_score >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                          {c.trust_score >= 0 ? `+${c.trust_score}` : c.trust_score}
-                        </span>
-                        <div className="flex gap-2 border-t md:border-t-0 border-gray-900 pt-1 md:pt-0">
-                          <button onClick={() => handleVote(c.id, 1)} className="bg-emerald-950/40 hover:bg-emerald-900/60 border border-emerald-900/40 text-emerald-400 w-6 h-6 flex items-center justify-center rounded transition-all font-bold text-xs">▲</button>
-                          <button onClick={() => handleVote(c.id, -1)} className="bg-red-950/40 hover:bg-red-900/60 border border-red-900/40 text-red-400 w-6 h-6 flex items-center justify-center rounded transition-all font-bold text-xs">▼</button>
-                        </div>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </main>
