@@ -30,9 +30,7 @@
       const map = {
         estafa: '#VZN26_dn_fakecf',
         veridico: '#VZN26_dn_realcf',
-        abuso: '#VZN26_dn_abuse',
-        desaparicion_nna: '#VZN26_dn_desnn',
-        desaparicion_adultos: '#VZN26_dn_desad'
+        abuso: '#VZN26_dn_abuse'
       };
       return map[category] || '#VZN26';
     }
@@ -41,15 +39,12 @@
       'd2353976-d0fb-41b9-941b-b8cd0174e888'
     ];
 
-    // Lista de tags para los botones interactivos
     const TAG_BUTTONS = [
       { tag: '#VZN26_ls', label: 'Listas / Actas', color: 'emerald' },
       { tag: '#VZN26_dn_fakecf', label: 'Estafa / Fraude', color: 'red' },
       { tag: '#VZN26_dn_realcf', label: 'Recaudación real', color: 'green' },
       { tag: '#VZN26_dn_abuse', label: 'Abuso de autoridad', color: 'purple' },
       { tag: '#VZN26_dn_hoax', label: 'Desmentido / Fake news', color: 'yellow' },
-      { tag: '#VZN26_dn_desnn', label: 'Desaparición NNA', color: 'pink' },
-      { tag: '#VZN26_dn_desad', label: 'Desaparición Adultos', color: 'pink' },
       { tag: '#VZN26_proyectos', label: 'Proyectos comunitarios', color: 'blue' },
     ];
 
@@ -58,7 +53,6 @@
       const [campaigns, setCampaigns] = useState([]);
       const [searchTerm, setSearchTerm] = useState('');
 
-      // Estado del carrusel
       const [slideIndex, setSlideIndex] = useState(0);
       const [touchStart, setTouchStart] = useState(null);
       const [touchEnd, setTouchEnd] = useState(null);
@@ -119,7 +113,11 @@
           .from('crowdfunding_registry')
           .select('*')
           .order('created_at', { ascending: false });
-        if (!error && data) setCampaigns(data);
+        if (!error && data) {
+          // Ocultar registros de desapariciones
+          const filtered = data.filter(c => c.category !== 'desaparicion_nna' && c.category !== 'desaparicion_adultos');
+          setCampaigns(filtered);
+        }
       }, []);
 
       useEffect(() => {
@@ -181,10 +179,8 @@
 
       const isTestRecord = (id) => TEST_IDS.includes(id);
 
-      // Función para autocompletar el buscador
       const handleTagClick = (tag) => {
         setSearchTerm(tag);
-        // Opcional: desplazar el foco al input
         const input = document.getElementById('search');
         if (input) input.focus();
       };
@@ -192,7 +188,6 @@
       return (
         <div className="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
           <div>
-            {/* Header */}
             <header className="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4 py-2">
               <div className="flex flex-col max-w-7xl mx-auto gap-1">
                 <div className="flex justify-between items-center">
@@ -221,7 +216,6 @@
               </div>
             </header>
 
-            {/* Hero + Tarjetas */}
             <section className="bg-gradient-to-b from-[#090d16] to-transparent py-10 px-4 border-b border-gray-900/60">
               <div className="max-w-7xl mx-auto">
                 <div className="max-w-3xl mb-8">
@@ -292,7 +286,6 @@
               </div>
             </section>
 
-            {/* ===== CARRUSEL ===== */}
             <div className="max-w-7xl mx-auto px-4 mt-8">
               <div className="relative overflow-hidden rounded-xl bg-blue-950/20 border border-blue-800/30 shadow-lg shadow-blue-900/10 backdrop-blur-sm p-6 md:p-8">
                 <div className="absolute inset-0 opacity-15 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/img/andalucia-logo.png')" }}></div>
@@ -354,7 +347,6 @@
                 </div>
               </div>
 
-              {/* Buscador y leyenda con botones interactivos */}
               <div className="bg-[#090d16]/40 backdrop-blur-sm p-4 rounded-xl border border-gray-800 mb-6">
                 <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
                   <div className="flex-1 w-full">
@@ -366,7 +358,7 @@
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-all font-mono text-sm"
-                        placeholder="Ej: #VZN26_dn_fakecf, estafa, abuso... (haz clic en los códigos abajo)"
+                        placeholder="Ej: #VZN26_dn_fakecf, estafa, abuso... (clic en los códigos abajo)"
                       />
                       {searchTerm && (
                         <button
@@ -395,7 +387,6 @@
                         green: 'border-green-500/30 text-green-400 hover:bg-green-950/40',
                         purple: 'border-purple-500/30 text-purple-400 hover:bg-purple-950/40',
                         yellow: 'border-yellow-500/30 text-yellow-400 hover:bg-yellow-950/40',
-                        pink: 'border-pink-500/30 text-pink-400 hover:bg-pink-950/40',
                         blue: 'border-blue-500/30 text-blue-400 hover:bg-blue-950/40',
                       };
                       const colorClass = colorMap[item.color] || colorMap.blue;
@@ -430,7 +421,6 @@
                         c.category === 'estafa' ? 'border-red-950/40 hover:border-red-900/40' :
                         c.category === 'abuso' ? 'border-purple-950/40 hover:border-purple-900/40' :
                         c.category === 'veridico' ? 'border-emerald-950/40 hover:border-emerald-900/40' :
-                        c.category === 'desaparicion_nna' || c.category === 'desaparicion_adultos' ? 'border-pink-950/40 hover:border-pink-900/40' :
                         'border-gray-950/40 hover:border-gray-900/40'
                       }`}>
                         <div className="flex-1 space-y-2">
@@ -439,14 +429,11 @@
                               c.category === 'estafa' ? 'bg-red-950/50 text-red-400 border-red-900/30' :
                               c.category === 'abuso' ? 'bg-purple-950/50 text-purple-400 border-purple-900/30' :
                               c.category === 'veridico' ? 'bg-emerald-950/50 text-emerald-400 border-emerald-900/30' :
-                              c.category === 'desaparicion_nna' || c.category === 'desaparicion_adultos' ? 'bg-pink-950/50 text-pink-400 border-pink-900/30' :
                               'bg-gray-950/50 text-gray-400 border-gray-900/30'
                             }`}>
                               {c.category === 'estafa' ? '🚨 Reporte: Fraude / Estafa' :
                                c.category === 'abuso' ? '⚠️ Alerta Abuso' :
                                c.category === 'veridico' ? '✅ Cuenta Verificada' :
-                               c.category === 'desaparicion_nna' ? '🚨 Desaparición NNA' :
-                               c.category === 'desaparicion_adultos' ? '🚨 Desaparición Adultos' :
                                '📌 Reporte'}
                             </span>
                             <span className="text-[10px] text-blue-400 font-mono bg-blue-950/30 px-1.5 py-0.5 rounded border border-blue-900/30">
