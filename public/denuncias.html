@@ -32,7 +32,6 @@
       const [lng, setLng] = useState('');
       const [locationLoading, setLocationLoading] = useState(false);
 
-      // Checkboxes de aceptación
       const [aceptaVeracidad, setAceptaVeracidad] = useState(false);
       const [aceptaExencion, setAceptaExencion] = useState(false);
 
@@ -73,8 +72,7 @@
           description: desc,
           category: type,
           lat: lat ? parseFloat(lat) : null,
-          lng: lng ? parseFloat(lng) : null,
-          terms_accepted: true  // registro de aceptación
+          lng: lng ? parseFloat(lng) : null
         };
 
         const { error } = await supabaseClient
@@ -99,9 +97,9 @@
       return (
         <div className="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
           <div>
+            {/* ===== HEADER ===== */}
             <header className="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4 py-2">
               <div className="flex flex-col max-w-7xl mx-auto gap-1">
-                {/* Fila superior: título + nodo */}
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <span className="text-red-500 animate-pulse font-bold">●</span>
@@ -112,9 +110,7 @@
                       <span className="text-emerald-400 text-[8px] font-bold">NODO</span>
                     </span>
                   </div>
-                  {/* Espacio para futuros elementos si se desea */}
                 </div>
-                {/* Fila inferior: botones */}
                 <div className="flex flex-wrap justify-center items-center gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800/80 text-xs font-mono">
                   <a href="/" className="bg-gray-900 text-white border border-gray-800 px-3 py-1.5 rounded-md transition-all shadow-sm">Inicio</a>
                   <a href="/normalizar.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Normalizar</a>
@@ -129,9 +125,8 @@
                 </div>
               </div>
             </header>
-            {/* Header */}
 
-            {/* Formulario de denuncia */}
+            {/* ===== FORMULARIO ===== */}
             <main className="p-4 md:p-6 max-w-3xl mx-auto">
               <div className="bg-[#090d16]/80 backdrop-blur-md p-6 rounded-xl border border-gray-800 shadow-xl">
                 <h2 className="text-xl font-bold text-white font-mono mb-4 flex items-center gap-2">
@@ -148,6 +143,8 @@
                       <option value="estafa">🚨 Alerta: Campaña Falsa / Estafa</option>
                       <option value="veridico">✅ Campañas de Recaudación Real</option>
                       <option value="abuso">⚠️ Abuso de Autoridad (Militar/Policial)</option>
+                      <option value="desaparicion_nna">🚨 Desaparición de Niños, Niñas y Adolescentes</option>
+                      <option value="desaparicion_adultos">🚨 Desaparición de Adultos (+18)</option>
                     </select>
                   </div>
 
@@ -185,37 +182,22 @@
                     </button>
                   </div>
 
-                  {/* Checkboxes de aceptación */}
                   <div className="bg-gray-950/60 p-3 rounded-lg border border-gray-800 space-y-2">
                     <label className="flex items-start gap-2 text-xs text-gray-300 font-mono">
-                      <input
-                        type="checkbox"
-                        checked={aceptaVeracidad}
-                        onChange={e => setAceptaVeracidad(e.target.checked)}
-                        className="mt-0.5 w-4 h-4 accent-red-500"
-                      />
+                      <input type="checkbox" checked={aceptaVeracidad} onChange={e => setAceptaVeracidad(e.target.checked)} className="mt-0.5 w-4 h-4 accent-red-500" />
                       <span>Declaro bajo mi exclusiva responsabilidad que la evidencia adjunta es real, no ha sido manipulada digitalmente y corresponde a un asunto de estricto interés público y auditoría ciudadana.</span>
                     </label>
                     <label className="flex items-start gap-2 text-xs text-gray-300 font-mono">
-                      <input
-                        type="checkbox"
-                        checked={aceptaExencion}
-                        onChange={e => setAceptaExencion(e.target.checked)}
-                        className="mt-0.5 w-4 h-4 accent-red-500"
-                      />
+                      <input type="checkbox" checked={aceptaExencion} onChange={e => setAceptaExencion(e.target.checked)} className="mt-0.5 w-4 h-4 accent-red-500" />
                       <span>Acepto que esta plataforma actúa únicamente como un repositorio técnico automatizado y no se hace responsable de las opiniones o interpretaciones del material indexado.</span>
                     </label>
                   </div>
 
-                  <button
-                    type="submit"
-                    disabled={!aceptaVeracidad || !aceptaExencion}
-                    className={`w-full py-2.5 rounded-lg font-bold uppercase tracking-wider shadow-lg active:scale-[0.99] transition-all ${
-                      !aceptaVeracidad || !aceptaExencion
-                        ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
-                        : 'bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-red-900/20'
-                    }`}
-                  >
+                  <button type="submit" disabled={!aceptaVeracidad || !aceptaExencion} className={`w-full py-2.5 rounded-lg font-bold uppercase tracking-wider shadow-lg active:scale-[0.99] transition-all ${
+                    !aceptaVeracidad || !aceptaExencion
+                      ? 'bg-gray-700 text-gray-400 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white shadow-red-900/20'
+                  }`}>
                     Inyectar al Repositorio
                   </button>
 
@@ -229,7 +211,7 @@
             </main>
           </div>
 
-          {/* Footer unificado */}
+          {/* ===== FOOTER ===== */}
           <footer className="bg-[#070b12] border-t border-gray-900/60 p-6 text-center text-gray-400 space-y-4 font-mono text-xs">
             <div className="max-w-5xl mx-auto space-y-3">
               <div className="text-[11px] text-gray-400 font-semibold">Aviso de Neutralidad Tecnológica y Auditoría Ciudadana</div>

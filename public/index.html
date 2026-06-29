@@ -30,7 +30,9 @@
       const map = {
         estafa: '#VZN26_dn_fakecf',
         veridico: '#VZN26_dn_realcf',
-        abuso: '#VZN26_dn_abuse'
+        abuso: '#VZN26_dn_abuse',
+        desaparicion_nna: '#VZN26_dn_desnn',
+        desaparicion_adultos: '#VZN26_dn_desad'
       };
       return map[category] || '#VZN26';
     }
@@ -80,36 +82,17 @@
         }
       ];
 
-      const nextSlide = () => {
-        setSlideIndex((prev) => (prev + 1) % slides.length);
-      };
-      const prevSlide = () => {
-        setSlideIndex((prev) => (prev - 1 + slides.length) % slides.length);
-      };
+      const nextSlide = () => setSlideIndex((prev) => (prev + 1) % slides.length);
+      const prevSlide = () => setSlideIndex((prev) => (prev - 1 + slides.length) % slides.length);
       const goToSlide = (index) => setSlideIndex(index);
 
-      // Handlers táctiles
-      const handleTouchStart = (e) => {
-        setTouchStart(e.targetTouches[0].clientX);
-      };
-
-      const handleTouchMove = (e) => {
-        setTouchEnd(e.targetTouches[0].clientX);
-      };
-
+      const handleTouchStart = (e) => setTouchStart(e.targetTouches[0].clientX);
+      const handleTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
       const handleTouchEnd = () => {
         if (!touchStart || !touchEnd) return;
         const distance = touchStart - touchEnd;
-        const isLeftSwipe = distance > 50;
-        const isRightSwipe = distance < -50;
-
-        if (isLeftSwipe) {
-          nextSlide();
-        }
-        if (isRightSwipe) {
-          prevSlide();
-        }
-        // Resetear estados
+        if (distance > 50) nextSlide();
+        if (distance < -50) prevSlide();
         setTouchStart(null);
         setTouchEnd(null);
       };
@@ -292,32 +275,17 @@
             {/* ===== CARRUSEL ===== */}
             <div className="max-w-7xl mx-auto px-4 mt-8">
               <div className="relative overflow-hidden rounded-xl bg-blue-950/20 border border-blue-800/30 shadow-lg shadow-blue-900/10 backdrop-blur-sm p-6 md:p-8">
-                {/* Fondo con logo */}
                 <div className="absolute inset-0 opacity-15 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/img/andalucia-logo.png')" }}></div>
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-950/60 via-blue-950/40 to-transparent"></div>
 
                 <div className="relative z-10">
-                  {/* Carrusel */}
                   <div className="flex items-center gap-4">
-                    {/* Flecha izquierda */}
-                    <button
-                      onClick={prevSlide}
-                      className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-gray-950/60 hover:bg-gray-800/80 border border-gray-700 text-gray-400 hover:text-white transition-all flex-shrink-0"
-                    >
+                    <button onClick={prevSlide} className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-gray-950/60 hover:bg-gray-800/80 border border-gray-700 text-gray-400 hover:text-white transition-all flex-shrink-0">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
                     </button>
 
-                    {/* Tarjetas - Contenedor con eventos táctiles */}
-                    <div 
-                      className="flex-1 overflow-hidden"
-                      onTouchStart={handleTouchStart}
-                      onTouchMove={handleTouchMove}
-                      onTouchEnd={handleTouchEnd}
-                    >
-                      <div
-                        className="flex transition-transform duration-500 ease-in-out"
-                        style={{ transform: `translateX(-${slideIndex * 100}%)` }}
-                      >
+                    <div className="flex-1 overflow-hidden" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+                      <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${slideIndex * 100}%)` }}>
                         {slides.map((slide) => (
                           <div key={slide.id} className="w-full flex-shrink-0 px-2">
                             <div className="bg-[#090d16]/80 backdrop-blur-sm p-6 rounded-xl border border-gray-800 shadow-xl min-h-[260px] flex flex-col justify-between">
@@ -337,40 +305,15 @@
                       </div>
                     </div>
 
-                    {/* Flecha derecha */}
-                    <button
-                      onClick={nextSlide}
-                      className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-gray-950/60 hover:bg-gray-800/80 border border-gray-700 text-gray-400 hover:text-white transition-all flex-shrink-0"
-                    >
+                    <button onClick={nextSlide} className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-gray-950/60 hover:bg-gray-800/80 border border-gray-700 text-gray-400 hover:text-white transition-all flex-shrink-0">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
                     </button>
                   </div>
 
-                  {/* Puntos indicadores */}
                   <div className="flex justify-center gap-2 mt-6">
                     {slides.map((_, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => goToSlide(idx)}
-                        className={`w-2.5 h-2.5 rounded-full transition-all ${
-                          idx === slideIndex ? 'bg-blue-400 w-6' : 'bg-gray-600 hover:bg-gray-400'
-                        }`}
-                      />
+                      <button key={idx} onClick={() => goToSlide(idx)} className={`w-2.5 h-2.5 rounded-full transition-all ${idx === slideIndex ? 'bg-blue-400 w-6' : 'bg-gray-600 hover:bg-gray-400'}`} />
                     ))}
-                  </div>
-
-                  {/* Botón y ejemplo (fuera del carrusel) */}
-                  <div className="mt-6 flex flex-wrap items-center justify-center gap-4 border-t border-gray-800/50 pt-6">
-                    <a
-                      href="/normalizar.html"
-                      className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-6 rounded-lg transition-all shadow-lg shadow-blue-900/30 text-sm font-mono"
-                    >
-                      🚀 Generar hashtags ahora
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                    </a>
-                    <span className="text-xs text-gray-400 font-mono bg-gray-950/50 px-3 py-1.5 rounded-full border border-gray-800">
-                      Ej: #VZN26_dn_fakecf · #VZN26_ls · #SOSCaracas
-                    </span>
                   </div>
                 </div>
               </div>
@@ -424,7 +367,7 @@
 
                 <div className="mt-4 pt-4 border-t border-gray-800/60">
                   <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Códigos de hashtag</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 text-[10px] font-mono">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-[10px] font-mono">
                     <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
                       <span className="text-emerald-400">#VZN26_ls</span>
                       <span className="text-gray-500 block">Listas / Actas</span>
@@ -444,6 +387,14 @@
                     <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
                       <span className="text-yellow-400">#VZN26_dn_hoax</span>
                       <span className="text-gray-500 block">Desmentido / Fake news</span>
+                    </div>
+                    <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
+                      <span className="text-pink-400">#VZN26_dn_desnn</span>
+                      <span className="text-gray-500 block">Desaparición NNA</span>
+                    </div>
+                    <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
+                      <span className="text-pink-400">#VZN26_dn_desad</span>
+                      <span className="text-gray-500 block">Desaparición Adultos</span>
                     </div>
                     <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
                       <span className="text-blue-400">#VZN26_proyectos</span>
@@ -468,16 +419,25 @@
                       <div key={c.id} className={`p-4 rounded-xl border bg-[#090d16]/60 backdrop-blur-sm transition-all shadow-md flex flex-col md:flex-row justify-between gap-4 ${
                         c.category === 'estafa' ? 'border-red-950/40 hover:border-red-900/40' :
                         c.category === 'abuso' ? 'border-purple-950/40 hover:border-purple-900/40' :
-                        'border-emerald-950/40 hover:border-emerald-900/40'
+                        c.category === 'veridico' ? 'border-emerald-950/40 hover:border-emerald-900/40' :
+                        c.category === 'desaparicion_nna' || c.category === 'desaparicion_adultos' ? 'border-pink-950/40 hover:border-pink-900/40' :
+                        'border-gray-950/40 hover:border-gray-900/40'
                       }`}>
                         <div className="flex-1 space-y-2">
                           <div className="flex flex-wrap items-center gap-2">
                             <span className={`text-[9px] px-2 py-0.5 rounded-md font-bold tracking-wider uppercase border font-mono ${
                               c.category === 'estafa' ? 'bg-red-950/50 text-red-400 border-red-900/30' :
                               c.category === 'abuso' ? 'bg-purple-950/50 text-purple-400 border-purple-900/30' :
-                              'bg-emerald-950/50 text-emerald-400 border-emerald-900/30'
+                              c.category === 'veridico' ? 'bg-emerald-950/50 text-emerald-400 border-emerald-900/30' :
+                              c.category === 'desaparicion_nna' || c.category === 'desaparicion_adultos' ? 'bg-pink-950/50 text-pink-400 border-pink-900/30' :
+                              'bg-gray-950/50 text-gray-400 border-gray-900/30'
                             }`}>
-                              {c.category === 'estafa' ? '🚨 Reporte: Fraude / Estafa' : c.category === 'abuso' ? '⚠️ Alerta Abuso' : '✅ Cuenta Verificada'}
+                              {c.category === 'estafa' ? '🚨 Reporte: Fraude / Estafa' : 
+                               c.category === 'abuso' ? '⚠️ Alerta Abuso' : 
+                               c.category === 'veridico' ? '✅ Cuenta Verificada' :
+                               c.category === 'desaparicion_nna' ? '🚨 Desaparición NNA' :
+                               c.category === 'desaparicion_adultos' ? '🚨 Desaparición Adultos' :
+                               '📌 Reporte'}
                             </span>
                             <span className="text-[10px] text-blue-400 font-mono bg-blue-950/30 px-1.5 py-0.5 rounded border border-blue-900/30">
                               {getTagForCategory(c.category)}
