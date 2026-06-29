@@ -41,6 +41,18 @@
       'd2353976-d0fb-41b9-941b-b8cd0174e888'
     ];
 
+    // Lista de tags para los botones interactivos
+    const TAG_BUTTONS = [
+      { tag: '#VZN26_ls', label: 'Listas / Actas', color: 'emerald' },
+      { tag: '#VZN26_dn_fakecf', label: 'Estafa / Fraude', color: 'red' },
+      { tag: '#VZN26_dn_realcf', label: 'Recaudación real', color: 'green' },
+      { tag: '#VZN26_dn_abuse', label: 'Abuso de autoridad', color: 'purple' },
+      { tag: '#VZN26_dn_hoax', label: 'Desmentido / Fake news', color: 'yellow' },
+      { tag: '#VZN26_dn_desnn', label: 'Desaparición NNA', color: 'pink' },
+      { tag: '#VZN26_dn_desad', label: 'Desaparición Adultos', color: 'pink' },
+      { tag: '#VZN26_proyectos', label: 'Proyectos comunitarios', color: 'blue' },
+    ];
+
     function PortalApp() {
       const [fingerprint] = useState(generateFingerprint());
       const [campaigns, setCampaigns] = useState([]);
@@ -168,6 +180,14 @@
       }, [campaigns, searchTerm]);
 
       const isTestRecord = (id) => TEST_IDS.includes(id);
+
+      // Función para autocompletar el buscador
+      const handleTagClick = (tag) => {
+        setSearchTerm(tag);
+        // Opcional: desplazar el foco al input
+        const input = document.getElementById('search');
+        if (input) input.focus();
+      };
 
       return (
         <div className="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
@@ -334,7 +354,7 @@
                 </div>
               </div>
 
-              {/* Buscador y leyenda */}
+              {/* Buscador y leyenda con botones interactivos */}
               <div className="bg-[#090d16]/40 backdrop-blur-sm p-4 rounded-xl border border-gray-800 mb-6">
                 <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
                   <div className="flex-1 w-full">
@@ -346,7 +366,7 @@
                         value={searchTerm}
                         onChange={e => setSearchTerm(e.target.value)}
                         className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-600 focus:outline-none focus:border-blue-500 transition-all font-mono text-sm"
-                        placeholder="Ej: #VZN26_dn_fakecf, estafa, abuso..."
+                        placeholder="Ej: #VZN26_dn_fakecf, estafa, abuso... (haz clic en los códigos abajo)"
                       />
                       {searchTerm && (
                         <button
@@ -366,42 +386,32 @@
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gray-800/60">
-                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Códigos de hashtag</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 text-[10px] font-mono">
-                    <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
-                      <span className="text-emerald-400">#VZN26_ls</span>
-                      <span className="text-gray-500 block">Listas / Actas</span>
-                    </div>
-                    <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
-                      <span className="text-red-400">#VZN26_dn_fakecf</span>
-                      <span className="text-gray-500 block">Estafa / Fraude</span>
-                    </div>
-                    <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
-                      <span className="text-green-400">#VZN26_dn_realcf</span>
-                      <span className="text-gray-500 block">Recaudación real</span>
-                    </div>
-                    <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
-                      <span className="text-purple-400">#VZN26_dn_abuse</span>
-                      <span className="text-gray-500 block">Abuso de autoridad</span>
-                    </div>
-                    <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
-                      <span className="text-yellow-400">#VZN26_dn_hoax</span>
-                      <span className="text-gray-500 block">Desmentido / Fake news</span>
-                    </div>
-                    <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
-                      <span className="text-pink-400">#VZN26_dn_desnn</span>
-                      <span className="text-gray-500 block">Desaparición NNA</span>
-                    </div>
-                    <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
-                      <span className="text-pink-400">#VZN26_dn_desad</span>
-                      <span className="text-gray-500 block">Desaparición Adultos</span>
-                    </div>
-                    <div className="bg-gray-950/60 px-2 py-1 rounded border border-gray-800">
-                      <span className="text-blue-400">#VZN26_proyectos</span>
-                      <span className="text-gray-500 block">Proyectos comunitarios</span>
-                    </div>
+                  <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">Códigos de hashtag (clic para buscar)</p>
+                  <div className="flex flex-wrap gap-2">
+                    {TAG_BUTTONS.map((item) => {
+                      const colorMap = {
+                        emerald: 'border-emerald-500/30 text-emerald-400 hover:bg-emerald-950/40',
+                        red: 'border-red-500/30 text-red-400 hover:bg-red-950/40',
+                        green: 'border-green-500/30 text-green-400 hover:bg-green-950/40',
+                        purple: 'border-purple-500/30 text-purple-400 hover:bg-purple-950/40',
+                        yellow: 'border-yellow-500/30 text-yellow-400 hover:bg-yellow-950/40',
+                        pink: 'border-pink-500/30 text-pink-400 hover:bg-pink-950/40',
+                        blue: 'border-blue-500/30 text-blue-400 hover:bg-blue-950/40',
+                      };
+                      const colorClass = colorMap[item.color] || colorMap.blue;
+                      return (
+                        <button
+                          key={item.tag}
+                          onClick={() => handleTagClick(item.tag)}
+                          className={`px-3 py-1.5 rounded-lg border text-[11px] font-mono transition-all ${colorClass} hover:scale-105 active:scale-95`}
+                        >
+                          {item.tag}
+                          <span className="text-[9px] text-gray-500 block">{item.label}</span>
+                        </button>
+                      );
+                    })}
                   </div>
-                  <p className="text-[9px] text-gray-500 mt-2 font-mono">Usa estos códigos en el buscador para filtrar rápidamente.</p>
+                  <p className="text-[9px] text-gray-500 mt-2 font-mono">Haz clic en cualquier código para autocompletar el buscador.</p>
                 </div>
               </div>
 
@@ -432,8 +442,8 @@
                               c.category === 'desaparicion_nna' || c.category === 'desaparicion_adultos' ? 'bg-pink-950/50 text-pink-400 border-pink-900/30' :
                               'bg-gray-950/50 text-gray-400 border-gray-900/30'
                             }`}>
-                              {c.category === 'estafa' ? '🚨 Reporte: Fraude / Estafa' : 
-                               c.category === 'abuso' ? '⚠️ Alerta Abuso' : 
+                              {c.category === 'estafa' ? '🚨 Reporte: Fraude / Estafa' :
+                               c.category === 'abuso' ? '⚠️ Alerta Abuso' :
                                c.category === 'veridico' ? '✅ Cuenta Verificada' :
                                c.category === 'desaparicion_nna' ? '🚨 Desaparición NNA' :
                                c.category === 'desaparicion_adultos' ? '🚨 Desaparición Adultos' :
