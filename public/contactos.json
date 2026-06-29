@@ -1,0 +1,80 @@
+[
+  {
+    "handle": "@toposazteca",
+    "nombre": "Topos Azteca México",
+    "pais": "México",
+    "bandera": "🇲🇽"
+  },
+  {
+    "handle": "@busf_bomberos_unidos",
+    "nombre": "Bomberos Unidos Sin Fronteras (BUSF)",
+    "pais": "España",
+    "bandera": "🇪🇸"
+  },
+  {
+    "handle": "@Gumegob",
+    "nombre": "Unidad Militar de Emergencias (UME)",
+    "pais": "España",
+    "bandera": "🇪🇸"
+  },
+  {
+    "handle": "@fairfaxfirerescue",
+    "nombre": "Fairfax County Urban Search & Rescue (USA-01)",
+    "pais": "Estados Unidos",
+    "bandera": "🇺🇸"
+  },
+  {
+    "handle": "@lafdfoundation",
+    "nombre": "Relacionada con el equipo USAR de Los Ángeles (USA-02)",
+    "pais": "Estados Unidos",
+    "bandera": "🇺🇸"
+  },
+  {
+    "handle": "@defensacivilrd",
+    "nombre": "Equipo de búsqueda y rescate de República Dominicana",
+    "pais": "República Dominicana",
+    "bandera": "🇩🇴"
+  },
+  {
+    "handle": "@proteccioncivilsv",
+    "nombre": "Equipos USAR de Protección Civil de El Salvador",
+    "pais": "El Salvador",
+    "bandera": "🇸🇻"
+  },
+  {
+    "handle": "@nayibbukele",
+    "nombre": "Presidente de El Salvador; ha compartido información sobre el despliegue de rescatistas salvadoreños",
+    "pais": "El Salvador",
+    "bandera": "🇸🇻"
+  },
+  {
+    "handle": "@defensacivilcolombia",
+    "nombre": "Defensa Civil Colombia",
+    "pais": "Colombia",
+    "bandera": "🇨🇴"
+  },
+  {
+    "handle": "@riesgosec",
+    "nombre": "Secretaría Nacional de Gestión de Riesgos de Ecuador",
+    "pais": "Ecuador",
+    "bandera": "🇪🇨"
+  },
+  {
+    "handle": "@sinaprocpanama",
+    "nombre": "SINAPROC Panamá",
+    "pais": "Panamá",
+    "bandera": "🇵🇦"
+  },
+  {
+    "handle": "@pompiershumanitaires",
+    "nombre": "Bomberos humanitarios franceses",
+    "pais": "Francia",
+    "bandera": "🇫🇷"
+  },
+  {
+    "handle": "@redog.ch",
+    "nombre": "Equipo suizo de búsqueda y rescate con perros",
+    "pais": "Suiza",
+    "bandera": "🇨🇭"
+  }
+]
