@@ -119,10 +119,9 @@
       return (
         <div className="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
           <div>
-            {/* HEADER MEJORADO - DOS FILAS */}
+            {/* Header */}
             <header className="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4 py-2">
               <div className="flex flex-col max-w-7xl mx-auto gap-1">
-                {/* Fila superior: título + nodo */}
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <span className="text-red-500 animate-pulse font-bold">●</span>
@@ -133,9 +132,7 @@
                       <span className="text-emerald-400 text-[8px] font-bold">NODO</span>
                     </span>
                   </div>
-                  {/* Espacio para futuros elementos si se desea */}
                 </div>
-                {/* Fila inferior: botones */}
                 <div className="flex flex-wrap justify-center items-center gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800/80 text-xs font-mono">
                   <a href="/" className="bg-gray-900 text-white border border-gray-800 px-3 py-1.5 rounded-md transition-all shadow-sm">Inicio</a>
                   <a href="/normalizar.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Normalizar</a>
@@ -151,6 +148,7 @@
               </div>
             </header>
 
+            {/* Hero + Tarjetas */}
             <section className="bg-gradient-to-b from-[#090d16] to-transparent py-10 px-4 border-b border-gray-900/60">
               <div className="max-w-7xl mx-auto">
                 <div className="max-w-3xl mb-8">
@@ -221,9 +219,17 @@
               </div>
             </section>
 
+            {/* ===== BLOQUE CON LOGO DE FONDO ===== */}
             <div className="max-w-7xl mx-auto px-4 mt-8">
-              <div className="bg-blue-950/20 border border-blue-800/30 rounded-xl p-6 md:p-8 shadow-lg shadow-blue-900/10 backdrop-blur-sm">
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+              <div className="relative overflow-hidden rounded-xl bg-blue-950/20 border border-blue-800/30 shadow-lg shadow-blue-900/10 backdrop-blur-sm p-6 md:p-8">
+                {/* Imagen de fondo (logo de Andalucia Projects) */}
+                <div className="absolute inset-0 opacity-15 bg-cover bg-center bg-no-repeat"
+                     style={{ backgroundImage: "url('/img/andalucia-logo.png')" }}>
+                </div>
+                {/* Efecto de degradado para mejorar legibilidad */}
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-950/60 via-blue-950/40 to-transparent"></div>
+
+                <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center gap-6">
                   <div className="flex-1">
                     <h3 className="text-xl md:text-2xl font-bold text-white font-mono flex items-center gap-2 mb-2">
                       <span className="text-blue-400">📢</span> Multiplicá el Alcance Ciudadano
@@ -244,7 +250,7 @@
                       </span>
                     </div>
                   </div>
-                  <div className="hidden md:block text-center text-blue-400/30 text-6xl font-mono font-bold select-none">
+                  <div className="hidden md:block text-center text-blue-400/20 text-6xl font-mono font-bold select-none">
                     #VZN26
                   </div>
                 </div>
@@ -266,6 +272,7 @@
                 </div>
               </div>
 
+              {/* Buscador y leyenda */}
               <div className="bg-[#090d16]/40 backdrop-blur-sm p-4 rounded-xl border border-gray-800 mb-6">
                 <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
                   <div className="flex-1 w-full">
