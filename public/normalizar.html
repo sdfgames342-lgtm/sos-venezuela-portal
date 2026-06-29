@@ -34,27 +34,55 @@
     ];
 
     // ============================================================
-    // Lógica de normalización (sin IA)
+    // Datos del carrusel (4 tarjetas)
+    // ============================================================
+    const slides = [
+      {
+        id: 1,
+        icon: '🔎',
+        title: '1. Centralización Forense',
+        text: 'Internet está lleno de perfiles dispersos publicando listas y actas. Nuestra plataforma unifica el flujo de datos: indexa de forma anónima a quienes desvían la ayuda humanitaria y centraliza las pruebas en un solo lugar.',
+        footer: 'Un mapa forense inmune a la censura local.'
+      },
+      {
+        id: 2,
+        icon: '👤',
+        title: '2. Anonimato y Contrainteligencia',
+        text: 'Diseñado bajo una arquitectura que no rastrea tu identidad. Podés denunciar con nombres y pruebas sin dejar huella digital, evadiendo la persecución de los organismos de censura.',
+        footer: 'Tu seguridad es la prioridad del sistema.'
+      },
+      {
+        id: 3,
+        icon: '⚡',
+        title: '3. El Acelerador de Indexación',
+        text: 'Al estructurar tus publicaciones con nuestros hashtags normalizados, activás un motor que automatiza la lectura de tu reporte. Tu video de auxilio pasa de estar perdido en las redes a ser procesado por el mapa en segundos.',
+        footer: 'Menos pasos para el usuario, más velocidad de respuesta.'
+      },
+      {
+        id: 4,
+        icon: '💥',
+        title: '4. Romper el Algoritmo',
+        text: 'Maximizamos el alcance de los reportes críticos enganchándolos a las tendencias globales del momento. Obligamos al algoritmo a mostrar el contenido para que llegue rápido a perfiles de ayuda internacional.',
+        footer: 'Centralizados bajo un mismo hashtag, somos visibles.'
+      }
+    ];
+
+    // ============================================================
+    // Lógica de normalización
     // ============================================================
     function generarTextoNormalizado(userText, tagsSeleccionados, tendenciasDia = [], ubicacion = '') {
       const raiz = "#VZN26";
       const tagsSet = new Set([raiz]);
-
-      // Agregar los tags seleccionados (ya incluyen el #)
       tagsSeleccionados.forEach(tag => tagsSet.add(tag));
 
-      // Hashtag geolocalizado (opcional)
       if (ubicacion && ubicacion.trim().length > 0) {
         const locClean = ubicacion.trim()
           .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
           .replace(/[^a-zA-Z0-9]/g, '')
           .toUpperCase();
-        if (locClean.length > 0) {
-          tagsSet.add(`#SOS${locClean}`);
-        }
+        if (locClean.length > 0) tagsSet.add(`#SOS${locClean}`);
       }
 
-      // Tendencias del día
       const tendenciasSanitizadas = tendenciasDia
         .filter(t => t && t.trim().length > 0)
         .map(t => t.startsWith('#') ? t : `#${t}`)
@@ -71,6 +99,27 @@
     // Componente principal
     // ============================================================
     function NormalizarApp() {
+      // Estados del carrusel
+      const [slideIndex, setSlideIndex] = useState(0);
+      const [touchStart, setTouchStart] = useState(null);
+      const [touchEnd, setTouchEnd] = useState(null);
+
+      const nextSlide = () => setSlideIndex((prev) => (prev + 1) % slides.length);
+      const prevSlide = () => setSlideIndex((prev) => (prev - 1 + slides.length) % slides.length);
+      const goToSlide = (index) => setSlideIndex(index);
+
+      const handleTouchStart = (e) => setTouchStart(e.targetTouches[0].clientX);
+      const handleTouchMove = (e) => setTouchEnd(e.targetTouches[0].clientX);
+      const handleTouchEnd = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+        if (distance > 50) nextSlide();
+        if (distance < -50) prevSlide();
+        setTouchStart(null);
+        setTouchEnd(null);
+      };
+
+      // Estados del formulario
       const [selectedTags, setSelectedTags] = useState([]);
       const [userText, setUserText] = useState('');
       const [ubicacion, setUbicacion] = useState('');
@@ -79,7 +128,7 @@
       const [error, setError] = useState('');
       const MAX_SELECT = 3;
 
-      // Cargar tendencias desde Supabase
+      // Cargar tendencias
       useEffect(() => {
         async function loadTrends() {
           const { data, error } = await supabaseClient
@@ -103,14 +152,12 @@
             setTendencias(['#EmergenciaVE']);
           }
         }
-
         loadTrends();
         const interval = setInterval(loadTrends, 300000);
         return () => clearInterval(interval);
       }, []);
 
-      // Sanitización de texto
-      function sanitizeText(text) {
+      const sanitizeText = (text) => {
         let clean = text.replace(/\b(ba\s?){2,}/gi, '');
         const insults = ['puto', 'marico', 'guevon', 'malparido', 'hdp', 'hijueputa'];
         insults.forEach(word => {
@@ -118,44 +165,36 @@
           clean = clean.replace(regex, '[abuso detectado]');
         });
         return clean.trim();
-      }
+      };
 
-      // Alternar selección de un tag
       const toggleTag = (tagId) => {
         const tag = ALL_TAGS.find(t => t.id === tagId);
         if (!tag) return;
-
         setSelectedTags(prev => {
           const isSelected = prev.some(t => t.id === tagId);
-          if (isSelected) {
-            return prev.filter(t => t.id !== tagId);
-          } else {
-            if (prev.length >= MAX_SELECT) {
-              alert(`Solo puedes seleccionar hasta ${MAX_SELECT} hashtags.`);
-              return prev;
-            }
-            return [...prev, tag];
+          if (isSelected) return prev.filter(t => t.id !== tagId);
+          if (prev.length >= MAX_SELECT) {
+            alert(`Solo puedes seleccionar hasta ${MAX_SELECT} hashtags.`);
+            return prev;
           }
+          return [...prev, tag];
         });
       };
 
       const handleGenerate = () => {
         const sanitized = sanitizeText(userText);
         if (sanitized.length < 80) {
-          setError('El texto limpio (sin insultos o texto repetitivo) debe tener al menos 80 caracteres.');
+          setError('El texto limpio debe tener al menos 80 caracteres.');
           return;
         }
         setError('');
-
         if (selectedTags.length === 0) {
-          setError('Selecciona al menos un hashtag de la lista.');
+          setError('Selecciona al menos un hashtag.');
           return;
         }
-
         const tagsLabels = selectedTags.map(t => t.label);
         const result = generarTextoNormalizado(sanitized, tagsLabels, tendencias, ubicacion);
         setPreview(result);
-
         navigator.clipboard.writeText(result)
           .then(() => alert('✅ Bloque copiado. Ahora pégalo en tus redes.'))
           .catch(() => alert('⚠️ Copiá manualmente el texto desde la vista previa.'));
@@ -166,9 +205,9 @@
       return (
         <div className="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
           <div>
+            {/* ===== HEADER ===== */}
             <header className="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4 py-2">
               <div className="flex flex-col max-w-7xl mx-auto gap-1">
-                {/* Fila superior: título + nodo */}
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
                     <span className="text-red-500 animate-pulse font-bold">●</span>
@@ -179,9 +218,7 @@
                       <span className="text-emerald-400 text-[8px] font-bold">NODO</span>
                     </span>
                   </div>
-                  {/* Espacio para futuros elementos si se desea */}
                 </div>
-                {/* Fila inferior: botones */}
                 <div className="flex flex-wrap justify-center items-center gap-1 bg-gray-950 p-1 rounded-lg border border-gray-800/80 text-xs font-mono">
                   <a href="/" className="bg-gray-900 text-white border border-gray-800 px-3 py-1.5 rounded-md transition-all shadow-sm">Inicio</a>
                   <a href="/normalizar.html" className="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Normalizar</a>
@@ -197,50 +234,82 @@
               </div>
             </header>
 
+            {/* ===== CARRUSEL DE INTRODUCCIÓN ===== */}
+            <div className="max-w-7xl mx-auto px-4 mt-6">
+              <div className="relative overflow-hidden rounded-xl bg-blue-950/20 border border-blue-800/30 shadow-lg shadow-blue-900/10 backdrop-blur-sm p-6 md:p-8">
+                <div className="absolute inset-0 opacity-15 bg-cover bg-center bg-no-repeat" style={{ backgroundImage: "url('/img/andalucia-logo.png')" }}></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-950/60 via-blue-950/40 to-transparent"></div>
+
+                <div className="relative z-10">
+                  <div className="flex items-center gap-4">
+                    <button onClick={prevSlide} className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-gray-950/60 hover:bg-gray-800/80 border border-gray-700 text-gray-400 hover:text-white transition-all flex-shrink-0">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                    </button>
+
+                    <div className="flex-1 overflow-hidden" onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
+                      <div className="flex transition-transform duration-500 ease-in-out" style={{ transform: `translateX(-${slideIndex * 100}%)` }}>
+                        {slides.map((slide) => (
+                          <div key={slide.id} className="w-full flex-shrink-0 px-2">
+                            <div className="bg-[#090d16]/80 backdrop-blur-sm p-6 rounded-xl border border-gray-800 shadow-xl min-h-[220px] flex flex-col justify-between">
+                              <div>
+                                <div className="flex items-center gap-3 mb-3">
+                                  <span className="text-3xl">{slide.icon}</span>
+                                  <h3 className="text-lg font-bold text-white font-mono">{slide.title}</h3>
+                                </div>
+                                <p className="text-sm text-gray-300 leading-relaxed font-mono">{slide.text}</p>
+                              </div>
+                              <div className="mt-4 pt-3 border-t border-gray-800/60">
+                                <p className="text-xs text-blue-400 font-mono italic">{slide.footer}</p>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <button onClick={nextSlide} className="hidden md:flex items-center justify-center w-10 h-10 rounded-full bg-gray-950/60 hover:bg-gray-800/80 border border-gray-700 text-gray-400 hover:text-white transition-all flex-shrink-0">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                    </button>
+                  </div>
+
+                  <div className="flex justify-center gap-2 mt-6">
+                    {slides.map((_, idx) => (
+                      <button key={idx} onClick={() => goToSlide(idx)} className={`w-2.5 h-2.5 rounded-full transition-all ${idx === slideIndex ? 'bg-blue-400 w-6' : 'bg-gray-600 hover:bg-gray-400'}`} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ===== FORMULARIO ===== */}
             <main className="p-4 md:p-6 max-w-4xl mx-auto">
               <div className="bg-[#090d16]/80 backdrop-blur-md p-6 rounded-xl border border-gray-800 shadow-xl">
                 <h2 className="text-xl font-bold text-white font-mono mb-4 flex items-center gap-2">
-                  <span className="text-blue-400">📢</span> Publicar sin censura
+                  <span className="text-blue-400">📢</span> Generador de Hashtags Normalizados
                 </h2>
-                <p className="text-xs text-gray-400 mb-6 leading-relaxed font-mono">
-                  Plataforma de código abierto y contrainteligencia ciudadana que permite denunciar de forma anónima, con nombres y pruebas, a corruptos que desvían ayuda humanitaria en Venezuela, indexándolos en un mapa forense inmune a la censura. Incluye un motor que acelera la indexación de videos y posteos de auxilio en redes sociales para romper el bloqueo del algoritmo y maximizar su alcance, optimizando la localización de listas nuevas publicadas en diferentes perfiles al centralizarlas bajo un mismo <strong>hashtag</strong>.
-                </p>
 
                 <div className="space-y-4 text-xs font-mono">
-                  {/* Selector de hashtags con botones */}
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2">
                       Selecciona hasta {MAX_SELECT} hashtags
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {ALL_TAGS.map(tag => (
-                        <button
-                          key={tag.id}
-                          onClick={() => toggleTag(tag.id)}
-                          className={`px-3 py-1.5 rounded-lg border transition-all font-mono text-[11px] ${
-                            isSelected(tag.id)
-                              ? 'bg-blue-600/40 border-blue-500 text-blue-200 shadow-lg shadow-blue-900/30'
-                              : 'bg-gray-950/60 border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200'
-                          }`}
-                        >
+                        <button key={tag.id} onClick={() => toggleTag(tag.id)} className={`px-3 py-1.5 rounded-lg border transition-all font-mono text-[11px] ${isSelected(tag.id) ? 'bg-blue-600/40 border-blue-500 text-blue-200 shadow-lg shadow-blue-900/30' : 'bg-gray-950/60 border-gray-700 text-gray-400 hover:border-gray-500 hover:text-gray-200'}`}>
                           {tag.label}
                           <span className="text-[9px] text-gray-500 block">{tag.desc}</span>
                         </button>
                       ))}
                     </div>
-                    <p className="text-[10px] text-gray-500 mt-2">
-                      {selectedTags.length} de {MAX_SELECT} seleccionados
-                    </p>
+                    <p className="text-[10px] text-gray-500 mt-2">{selectedTags.length} de {MAX_SELECT} seleccionados</p>
                   </div>
 
-                  {/* Ubicación opcional */}
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Ubicación (opcional)</label>
                     <input type="text" value={ubicacion} onChange={e => setUbicacion(e.target.value)} className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-blue-500 transition-all" placeholder="Ej: Caracas, Valencia, Zulia..." />
                     <p className="text-[10px] text-gray-500 mt-1">Si escribes una ciudad, se generará un hashtag geolocalizado (ej. #SOSCaracas).</p>
                   </div>
 
-                  {/* Texto del usuario */}
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tu descripción o enlace</label>
                     <textarea value={userText} onChange={e => setUserText(e.target.value)} rows="4" className="w-full p-2.5 bg-gray-950 border border-gray-800 rounded-lg text-gray-200 placeholder-gray-700 focus:outline-none focus:border-blue-500 transition-all resize-none" placeholder="Escribí al menos 80 caracteres..." />
@@ -248,15 +317,12 @@
                     {error && <p className="text-red-400 text-[11px] mt-1">{error}</p>}
                   </div>
 
-                  {/* Tendencias del día */}
                   <div>
                     <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Tendencias del día (inyección)</label>
                     <div className="flex flex-wrap gap-1 bg-gray-950 p-2 rounded-lg border border-gray-800 min-h-8">
                       {tendencias.length > 0 ? (
                         tendencias.map((t, idx) => (
-                          <span key={idx} className="text-blue-400 text-[11px] bg-blue-950/30 px-2 py-0.5 rounded border border-blue-900/30">
-                            {t.startsWith('#') ? t : `#${t}`}
-                          </span>
+                          <span key={idx} className="text-blue-400 text-[11px] bg-blue-950/30 px-2 py-0.5 rounded border border-blue-900/30">{t.startsWith('#') ? t : `#${t}`}</span>
                         ))
                       ) : (
                         <span className="text-gray-500 text-[11px]">Cargando tendencias…</span>
@@ -280,7 +346,7 @@
             </main>
           </div>
 
-          {/* Footer unificado */}
+          {/* ===== FOOTER ===== */}
           <footer className="bg-[#070b12] border-t border-gray-900/60 p-6 text-center text-gray-400 space-y-4 font-mono text-xs">
             <div className="max-w-5xl mx-auto space-y-3">
               <div className="text-[11px] text-gray-400 font-semibold">Aviso de Neutralidad Tecnológica y Auditoría Ciudadana</div>
