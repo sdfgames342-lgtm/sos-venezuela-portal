@@ -10,7 +10,7 @@
 <body class="bg-[#030712] text-gray-200 font-sans antialiased selection:bg-red-500/30 selection:text-red-200">
   <div class="min-h-screen flex flex-col justify-between bg-radial from-gray-900 via-gray-950 to-black">
     <div>
-      <!-- ===== HEADER CORRECTO ===== -->
+      <!-- ===== HEADER ===== -->
       <header class="sticky top-0 z-50 backdrop-blur-md bg-[#090d16]/80 border-b border-gray-800/60 px-4 py-2">
         <div class="flex flex-col max-w-7xl mx-auto gap-1">
           <div class="flex justify-between items-center">
@@ -29,6 +29,7 @@
             <a href="/normalizar.html" class="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Normalizar</a>
             <a href="/mapa.html" class="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Mapa</a>
             <a href="/devs.html" class="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Devs</a>
+            <a href="/contactos.html" class="text-gray-400 hover:text-white px-3 py-1.5 rounded-md transition-all">Contactos</a>
             <a href="https://www.instagram.com/andaluciaprojects?igsh=MWVueWFmamF1enRs" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-pink-400 transition-colors px-2 py-1.5 rounded-md flex items-center gap-1">
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
@@ -45,36 +46,52 @@
         </h2>
 
         <div class="space-y-6">
+          <!-- API Pública -->
           <div class="bg-[#090d16]/80 backdrop-blur-md p-6 rounded-xl border border-gray-800 shadow-xl">
             <h3 class="text-sm font-bold text-white font-mono uppercase tracking-widest mb-3">API Pública</h3>
             <p class="text-xs text-gray-400 mb-4 leading-relaxed">
               Todos los endpoints son de acceso público sin autenticación. Puedes consumirlos desde cualquier aplicación o script.
             </p>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 font-mono text-xs">
+              <!-- 1. Registry -->
               <div class="bg-gray-950 border border-gray-900 p-4 rounded-xl shadow-md">
                 <span class="text-emerald-400 font-bold block mb-1">GET /api/v1/registry</span>
-                <p class="text-gray-500 text-[11px] mb-2">Estructura JSON cruda para auditorías externas.</p>
+                <p class="text-gray-500 text-[11px] mb-2">Listado completo de campañas y denuncias.</p>
                 <div class="bg-[#030712] p-2 rounded border border-gray-900 text-gray-400 text-[10px] overflow-x-auto">
                   curl https://ve-emergency-map.vercel.app/api/v1/registry
                 </div>
               </div>
+              <!-- 2. Export CSV -->
               <div class="bg-gray-950 border border-gray-900 p-4 rounded-xl shadow-md">
                 <span class="text-amber-400 font-bold block mb-1">GET /api/v1/registry/export</span>
-                <p class="text-gray-500 text-[11px] mb-2">Descarga cruda CSV de contingencia local.</p>
+                <p class="text-gray-500 text-[11px] mb-2">Descarga en formato CSV.</p>
                 <div class="bg-[#030712] p-2 rounded border border-gray-900 text-gray-400 text-[10px] overflow-x-auto">
                   curl https://ve-emergency-map.vercel.app/api/v1/registry/export
                 </div>
               </div>
+              <!-- 3. Trends -->
               <div class="bg-gray-950 border border-gray-900 p-4 rounded-xl shadow-md">
                 <span class="text-blue-400 font-bold block mb-1">GET /api/v1/trends/normalized</span>
-                <p class="text-gray-500 text-[11px] mb-2">Diccionario de hashtags de evasión algorítmica.</p>
+                <p class="text-gray-500 text-[11px] mb-2">Tendencias y plantillas anti-censura.</p>
                 <div class="bg-[#030712] p-2 rounded border border-gray-900 text-gray-400 text-[10px] overflow-x-auto">
                   curl https://ve-emergency-map.vercel.app/api/v1/trends/normalized
+                </div>
+              </div>
+              <!-- 4. Contactos -->
+              <div class="bg-gray-950 border border-gray-900 p-4 rounded-xl shadow-md">
+                <span class="text-orange-400 font-bold block mb-1">GET /api/v1/contactos</span>
+                <p class="text-gray-500 text-[11px] mb-2">Lista de organizaciones de rescate.</p>
+                <div class="bg-[#030712] p-2 rounded border border-gray-900 text-gray-400 text-[10px] overflow-x-auto">
+                  curl https://ve-emergency-map.vercel.app/api/v1/contactos
+                </div>
+                <div class="mt-1 text-[9px] text-gray-500">
+                  También disponible en <span class="text-orange-400">/contactos.json</span>
                 </div>
               </div>
             </div>
           </div>
 
+          <!-- Repositorio y Contribución -->
           <div class="bg-[#090d16]/80 backdrop-blur-md p-6 rounded-xl border border-gray-800 shadow-xl">
             <h3 class="text-sm font-bold text-white font-mono uppercase tracking-widest mb-3">📌 Repositorio y Contribución</h3>
             <p class="text-xs text-gray-400 leading-relaxed">
